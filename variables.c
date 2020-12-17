@@ -45,15 +45,16 @@ static Type typelist;
 static int typeNum;
 
 Type initTypeList();    //初始化类型列表
-int ifExist(char* name_);  //是否存在某个名字的类型，参数：名字  返回值：存在则返回位置，不存在返回-1
-Type newBasic(int type_);  //新的固定类型的变量，参数：0 int   1 float
-Type newArray(Type type_,int size_);    //新的数组变量，参数:基本类型type  数组大小size
-Type newStructure(char* name_); //新的结构体变量，参数：名字
+Type ifExist(char* name_);  //是否存在某个名字的类型，参数：名字  返回值：存在则返回该Type，不存在返回NULL
+Type newBasic(int type_);  //基础类型，参数：0 int   1 float
+Type newArray(Type type_,int size_);    //数组类型，参数:基本类型type  数组大小size
+Type newStructure(char* name_); //结构体类型，参数：名字
 Type StructureAdd(Type struct_,int memnum,...);    //结构体内包含若干成员变量，参数：父亲结构体，要包含的成员变量数目，(循环)成员变量Type，成员变量名称char*,...
 bool isEqual(Type a,Type b);   //判断两个类型是否等价
 bool hideType(Type struct_);  //把这个结构体从链表中去掉
 void printType(Type t);      //打印该类型信息
 void printTypeList();        //打印全局类型链表
+
 
 
 
@@ -72,7 +73,7 @@ Type initTypeList()
     typeNum = 2;
 }
 
-int ifExist(char* name_)
+Type ifExist(char* name_)
 {
     int i;
     for(i=0;i!=-1;i = typelist[i].nxt)  //遍历全局变量类型链表
@@ -80,10 +81,10 @@ int ifExist(char* name_)
         if(typelist[i].kind!=STRUCTURE) continue;
         if(strcmp(name_,typelist[i].u.structure->name)==0)  //字符串相等
         {
-            return i;
+            return &typelist[i];
         }
     }
-    return -1;
+    return NULL;
 }
 
 Type newBasic(int type_)  //0:整数  1：浮点数
@@ -317,7 +318,7 @@ bool isEqual(Type a,Type b)
 int main()
 {
 
- /*  一些测试代码
+/*  测试代码
     initTypeList();
     printTypeList();
     Type temp,temp2,temp3,temp4,temp5;
@@ -325,6 +326,10 @@ int main()
     temp = newBasic(0);
     temp = newArray(temp,3); 
     temp5 = StructureAdd(temp5,1,temp,"naughty");
+    printf("***\n");
+    printTypeList();
+
+    printType(ifExist("lalala"));
 
     temp2 = newBasic(1);
     temp3 = newStructure("apple");
