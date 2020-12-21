@@ -9,6 +9,7 @@
 #define INT 0
 #define FLOAT 1
 #define MAXTYPENUM 10000  //最大的变量类型数量
+#define MAXMEMNUM 10000
 
 typedef struct Type_* Type;   //注意这里是指针！！
 typedef struct FieldList_* FieldList;
@@ -46,12 +47,14 @@ struct FieldList_
 static Type typelist;
 static int typeNum;
 
-Type initTypeList();    //初始化类型列表
+void initTypeList();    //初始化类型列表
 Type ifExist(char* name_);  //是否存在某个名字的类型，参数：名字  返回值：存在则返回该Type，不存在返回NULL
 Type newBasic(int type_);  //基础类型，参数：0 int   1 float
 Type newArray(Type type_,int size_);    //数组类型，参数:基本类型type  数组大小size
 Type newStructure(char* name_); //结构体类型，参数：名字
 Type StructureAdd(Type struct_,int memnum,...);    //结构体内包含若干成员变量，参数：父亲结构体，要包含的成员变量数目，(循环)成员变量Type，成员变量名称char*,...
+Type arrayMem(Type type_,int dms);     //返回数组第几维度的类型，参数：（数组）类型，维度
+Type structMem(Type type_,int num,...);  //结构体的成员变量类型，参数：（结构体）类型，后面成员变量个数num，num个成员变量名。比如类型node.id,调用函数structMem(node,1,"id");
 bool isEqual(Type a,Type b);   //判断两个类型是否等价
 bool hideType(Type struct_);  //把这个结构体从链表中去掉
 void printType(Type t);      //打印该类型信息

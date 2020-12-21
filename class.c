@@ -3,9 +3,9 @@
 #include<stdbool.h>
 #include<string.h>
 #include<stdarg.h>
-#include"mclass.h"
+#include"class.h"
 
-Type initTypeList()
+void initTypeList()
 {
     typelist = (Type)malloc(MAXTYPENUM*sizeof(struct Type_));
     typelist[0].kind = BASIC;   //0处是int型
@@ -167,6 +167,65 @@ Type StructureAdd(Type struct_,int memnum,...)  //参数：父亲结构体，要包含的成员
 
 }
 
+Type arrayMem(Type type_,int dms)
+{
+    if(type_->kind==BASIC || type_->kind==STRUCTURE)
+    {
+        printf("");  //该类型不是数组！该怎么通知上去呢？
+        return NULL;
+    }
+    if(type_->u.array.dimension<dms)
+    {
+        printf(""); //也可以认为是同样的错误类型
+        return NULL;
+    }
+    Type cur = type_;
+    int i;
+    for(i=1;i<=dms;i++)
+    {
+        cur = cur->u.array.elem;  //指向当前数组的基类型
+    }
+    return cur;
+}
+
+
+Type structMem(Type type_,int num,...)  //结构体的成员变量类型
+{
+    if(!num) return type_;
+    va_list arg_ptr;
+    va_start(arg_ptr,num);
+    Type cur = type_;
+    char* name_;
+    FieldList list_;
+    int i;
+    for(i = 1;i<=num;i++)
+    {
+        if(cur->kind==BASIC || cur->kind==ARRAY)
+        {
+            printf("");  //该类型没有成员变量！怎么通知上去？
+            return NULL;
+        }
+        name_= va_arg(arg_ptr,char*);  //下一个成员变量的名字
+        //找当前结构体的成员变量
+        list_ = cur->u.structure->tail;
+        while(list_!=NULL)
+        {
+            if(strcmp(name_,list_->name)==0)
+            {
+                cur = list_->type;
+                break;
+            }
+            list_ = list_->tail;
+        }
+        if(list_==NULL)
+        {
+            printf("");  //没有这个成员变量
+            return NULL;
+        }
+    }
+    return cur;
+}
+
 
 void printType(Type t)
 {
@@ -263,8 +322,28 @@ bool isEqual(Type a,Type b)
 
 int main()
 {
+    /*  测试代码
+    printf("hello\n");
+    initTypeList();
+    printTypeList();
+    Type temp,temp2,temp3,temp4,temp5;
+    temp5 = newStructure("lalala");
+    temp = newBasic(0);
+    temp = newArray(temp,3);
+    temp2 = newBasic(1);
+    temp5 = StructureAdd(temp5,2,temp,"naughty",temp2,"boy");
+    printf("***\n");
+    printTypeList();
+    temp3 = structMem(temp5,1,"boy");
+    if(isEqual(temp2,temp3))
+    {
+        printf("equal!\n");
+    }
+    else
+    {
+        printf("not equal!\n");
+    }
 
-/*  测试代码
     printType(ifExist("lalala"));
     initTypeList();
     printTypeList();
