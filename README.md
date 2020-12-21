@@ -32,7 +32,7 @@
   **重要函数：**
 ```c
     //初始化相关
-    Type initTypeList();    //初始化类型列表,程序开始的时候需要调用！
+    void initTypeList();    //初始化类型列表,程序开始的时候需要调用！
     
     //查询，查重相关
     Type ifExist(char* name_);  //是否存在某个名字的类型，参数：名字  返回值：存在则返回该Type，不存在返回NULL
@@ -44,6 +44,8 @@
     Type StructureAdd(Type struct_,int memnum,...);    //使结构体包含若干成员变量，参数：父亲结构体struct_，要包含的成员变量数目memnum，接下来是memnum个：成员变量Type，成员变量名称char*,...
     
     //类型等价相关
+    Type arrayMem(Type type_,int dms);     //返回数组第几维度的类型，参数：（数组）类型，维度
+    Type structMem(Type type_,int num,...);  //结构体的成员变量类型，参数：（结构体）类型，后面成员变量个数num，num个成员变量名。比如类型node.id,调用函数structMem(node,1,"id");
     bool isEqual(Type a,Type b);   //判断两个类型是否等价
 
     //debug相关
