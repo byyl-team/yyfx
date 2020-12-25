@@ -22,7 +22,7 @@ struct Type_
     union{
         //基本类型 int,float
         int basic;
-        //数组类型 
+        //数组类型
         struct {
             Type elem;  //元素类型
             int dimension;  //数组维度
@@ -35,7 +35,7 @@ struct Type_
 };
 
 struct FieldList_
-{ 
+{
     char* name;   //名字
     Type type;    //域类型
     FieldList tail;  //下一个域
@@ -48,6 +48,7 @@ static int typeNum;
 
 void initTypeList();    //初始化类型列表
 Type ifExist(char* name_);  //是否存在某个名字的类型，参数：名字  返回值：存在则返回该Type，不存在返回NULL
+Type ifExistStruct(char* name_);//是否存在某个名字的结构体类型
 Type newBasic(int type_);  //基础类型，参数：0 int   1 float
 Type newArray(Type type_);    //数组类型，参数:基本类型type  数组大小size
 Type newStructure(char* name_); //结构体类型，参数：名字

@@ -18,10 +18,29 @@ void initTypeList()
     typelist[1].nxt = -1;
     typeNum = 2;
 }
+Type ifExistStruct(char* name_)
+{
+    int i;
+    for(i=0;i!=-1;i = typelist[i].nxt)  //遍历全局变量类型链表
+    {
+        if(typelist[i].kind!=STRUCTURE) continue;
+        if(strcmp(name_,typelist[i].u.structure->name)==0)  //字符串相等
+        {
+            return &typelist[i];
+        }
+    }
+    return NULL;
+}
 
 Type ifExist(char* name_)
 {
     int i;
+    if(!strcmp("int", name_)){
+        return newBasic(0);
+    }
+    else if(!strcmp("float", name_)){
+        return newBasic(1);
+    }
     for(i=0;i!=-1;i = typelist[i].nxt)  //遍历全局变量类型链表
     {
         if(typelist[i].kind!=STRUCTURE) continue;
@@ -101,6 +120,7 @@ bool hideType(Type struct_)  //从全局变量类型链表里删去
         typelist[struct_->pre].nxt = struct_->nxt;
     if(struct_->nxt!=-1)
         typelist[struct_->nxt].pre = struct_->pre;
+    return true;
 }
 
 Type StructureAdd(Type struct_,int memnum,...)  //参数：父亲结构体，要包含的成员变量数目，(循环)成员变量Type，成员变量名称char*,...
@@ -319,8 +339,8 @@ bool isEqual(Type a,Type b)
 
 
 
-int main()
-{
+//int main()
+//{
     /*  测试代码
     printf("hello\n");
     initTypeList();
@@ -388,5 +408,5 @@ int main()
     }
     */
 
-    return 0;
-}
+    //return 0;
+//}

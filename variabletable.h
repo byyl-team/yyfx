@@ -60,8 +60,14 @@ struct hash_cao{//hash table中的一个槽，一个链表
 void init();
 void insert_space_unit(char *space_name);//插入一个域space
 void insert_variable_unit(char *vi_name,char * type);//创建一个变量（非函数、非数组），插入变量符号表中
-void insert_array_unit(char *array_name, int dimension, int* size, char * array_type);//创建数组变量，把数组变量插入到符号表中
+void insert_variable_unit_bytype(char *vi_name,Type type);
+void insert_array_unit(char *array_name, int dimension, Type array_type);//创建数组变量，把数组变量插入到符号表中
+//*********
+
 void insert_func_unit(char *func_name,char * return_type,int param_size,char** param_types,int is_defining);//创建函数
+void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Type *param_types,int is_defining);
+
+
 struct node * search_variable(char* vi_name);//按名查找变量，返回最内的域的同名变量的node的指针
 Type search_variable_type(char* vi_name);//输入变量名，返回变量类型（变量/函数）
 struct node* search_func(char *func_name);//按名搜索函数在变量符号表中的指针
@@ -71,5 +77,6 @@ int pjw_hash(char *name);//哈希函数
 struct node* search_func(char *func_name);//按名搜索函数在变量符号表中的指针
 void check_all_func_defined();//检查所有声明的函数是否定义了
 int able_define_func(char *func_name,int param_size,char** param_types,int is_defining);//是否可以定义/声明当前的函数
+int able_define_func_bytype(char *func_name,Type return_type,int param_size,Type* param_types,int is_defining);
 
 #endif /* variabletable_h */

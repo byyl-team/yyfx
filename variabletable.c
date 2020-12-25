@@ -45,6 +45,51 @@ void  insert_space_unit(char *space_name){
     printf("成功插入一个域! 当前域的深度s=%d\n",space_deep);
 }
 
+void insert_variable_unit_bytype(char *vi_name,Type type){
+    /*
+     创建一个变量（非函数、非数组），插入变量符号表中，函数和数组的创建在接下来的函数中实现
+     输入：vi_name 变量名
+     type 变量类型
+     */
+    /********变量名查重*********/
+    if(search_repeat(vi_name)){
+        printf("找到重名变量/结构体类型,无法插入变量节点\n");
+        return;
+        //重名，返回！
+    }
+    struct node *new_node=(struct node *)malloc(sizeof(struct node));
+    new_node->vi_name=(char*)malloc(sizeof(char)*40);
+    strcpy(new_node->vi_name, vi_name);//yeah
+    new_node->type=type;
+    new_node->space_deep=space_deep;
+    new_node->is_func=0;
+    printf("构造了变量名为%s，所在域深度为%d的变量\n",new_node->vi_name,new_node->space_deep );
+    //插入对应的hash cao
+    int val=pjw_hash(vi_name);
+    printf("插入哈希表的编号为%d的槽子\n",val);
+    //hash_table[val]此时已经（在init函数中）分配了相应的空间，可以直接访问了
+    if(hash_table[val].forw==NULL){//. or ->
+        //原来这个槽空
+        /*hash_table[val]的类型是hash_cao*/
+        hash_table[val].forw=new_node;
+        new_node->hash_forw_node=NULL;
+    }
+    else{
+        //原来槽中有几个node了
+        new_node->hash_forw_node=hash_table[val].forw;
+        hash_table[val].forw=new_node;
+    }
+    //给栈顶的域top这个维度的链表中也插入变量节点
+    if(top->forw==NULL){//top是栈顶的域，top->forw是栈顶域链表的头指针
+        top->forw=new_node;
+        new_node->space_forw_node=NULL;
+    }
+    else{
+        new_node->space_forw_node=top->forw;
+        top->forw=new_node;
+    }
+    printf("插入变量节点成功\n");
+}
 /*******插入一个新的变量（非函数、非数组），即结构体 *******/
 void insert_variable_unit(char *vi_name,char * type){
     /*
@@ -68,7 +113,6 @@ void insert_variable_unit(char *vi_name,char * type){
         printf("不存在此变量类型～\n");
         return;
     }
-    
     new_node->type=new_variable_type;
     new_node->space_deep=space_deep;
     new_node->is_func=0;
@@ -100,7 +144,7 @@ void insert_variable_unit(char *vi_name,char * type){
     printf("插入变量节点成功\n");
 }
 
-void insert_array_unit(char *array_name, int dimension, int* size, char * array_type){
+void insert_array_unit(char *array_name, int dimension,Type array_type){
     /*
      创建数组变量，把数组变量插入到符号表中
      输入：
@@ -114,14 +158,10 @@ void insert_array_unit(char *array_name, int dimension, int* size, char * array_
         return;
         //重名，返回！
     }
-    Type new_array_type=ifExist(array_type);//最底层的是我们的array_type 什么类型的数组
-    if(new_array_type==NULL){
-        printf("不存在此变量类型\n");
-        return;
-    }
+    Type new_array_type=array_type;//最底层的是我们的array_type 什么类型的数组
     for(int i=dimension-1;i>=0;i--){
         //从低到高创建数组变量
-        new_array_type=newArray(new_array_type, size[i]);
+        new_array_type=newArray(new_array_type);
     }
     struct node *new_node=(struct node *)malloc(sizeof(struct node));
     new_node->vi_name=(char*)malloc(sizeof(char)*40);
@@ -158,6 +198,84 @@ void insert_array_unit(char *array_name, int dimension, int* size, char * array_
     //new_array_type就是我们node中的type！（因为boooth is pointer! ）
 }
 
+/***********输入参数类型是Type类型变量************/
+void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Type *param_types,int is_defining){
+    /*
+     创建函数（声明/定义时都要调用，因为可以判断重定义、定义与声明不符合的错误）
+     输入：
+     func_name 函数名
+     return type 返回值类型
+     param_size 输入参数总个数
+     param_types 函数参数的类型数组
+     is_defining 定义函数设置为1，声明设置为0（因为C语言没有bool类型，用整型代替）
+     输出错误的格式如要调整，请告知我修改
+     */
+    int flag=able_define_func_bytype(func_name, return_type, param_size, param_types, is_defining);
+    if(!flag){
+        printf("函数定义/声明失败\n");
+        return;
+    }
+    if(flag==2){
+        printf("之前已经声明/定义过，不重复插入\n");
+        return;
+    }
+    struct node *new_node=(struct node *)malloc(sizeof(struct node));//当场建立，分配内存的思路对！不变
+    new_node->vi_name=(char*)malloc(sizeof(char)*40);
+    strcpy(new_node->vi_name, func_name);//yeah
+    //如果不存在这个类型返回啥 NULL
+    new_node->type=return_type;
+    new_node->space_deep=space_deep;
+    new_node->is_func=1;
+    //首次插入节点，is_defined未初始化，可能是任何值。防微杜渐，要初始化。逻辑：如果当前允许定义，那么就是第一个定义，否则就 不是定义是声明 ->0
+    if(is_defining){
+        new_node->is_defined=1;
+    }
+    else{
+        new_node->is_defined=0;
+    }
+    new_node->param_size=param_size;
+    //new_node->param=(struct unit**)malloc(param_size*sizeof(struct unit*));
+    /*二维数组如何分配内存C语言 https://blog.csdn.net/wzy_1988/article/details/9136373*/
+    new_node->param_type=(Type *)malloc(param_size*sizeof(Type));//Type已经是指针了
+    for (int i=0;i<param_size;i++){
+         new_node->param_type[i]=param_types[i];
+    }
+    printf("构造了函数名为%s，所在域深度为%d，有%d个参数的函数变量\n",new_node->vi_name,new_node->space_deep,new_node->param_size);
+    //插入对应的hash cao
+    int val=pjw_hash(func_name);
+    printf("插入哈希表的编号为%d的槽子\n",val);
+    if(hash_table[val].forw==NULL){//. or ->
+        //原来这个槽空
+        /*hash_table[val]的类型是hash_cao*/
+        hash_table[val].forw=new_node;
+        new_node->hash_forw_node=NULL;
+    }
+    else{
+        //原来槽中有几个node了
+        new_node->hash_forw_node=hash_table[val].forw;
+        hash_table[val].forw=new_node;
+    }
+    //给栈顶的域top这个维度的链表中也插入变量节点
+    if(top->forw==NULL){//top是栈顶的域，top->forw是栈顶域链表的头指针
+        top->forw=new_node;
+        new_node->space_forw_node=NULL;
+    }
+    else{
+        new_node->space_forw_node=top->forw;
+        top->forw=new_node;
+    }
+    //插入函数的自己的链表中
+    if(func_top==NULL){
+        func_top=new_node;
+        new_node->nxt_func_node=NULL;
+    }
+    else{
+        new_node->nxt_func_node=func_top;
+        func_top=new_node;
+    }
+    printf("插入函数节点成功\n");
+}
+
 /*******插入一个新的函数*******/
 void insert_func_unit(char *func_name,char * return_type,int param_size,char** param_types,int is_defining){
     /*
@@ -171,6 +289,8 @@ void insert_func_unit(char *func_name,char * return_type,int param_size,char** p
      输出错误的格式如要调整，请告知我修改
      */
     int flag=able_define_func(func_name,param_size,param_types, is_defining);
+    /*修改able_define_func函数-->able_define_func_bytype ok
+     */
     if(!flag){
         printf("函数定义/声明失败\n");
         return;
@@ -204,6 +324,9 @@ void insert_func_unit(char *func_name,char * return_type,int param_size,char** p
     /*二维数组如何分配内存C语言 https://blog.csdn.net/wzy_1988/article/details/9136373*/
     new_node->param_type=(Type *)malloc(param_size*sizeof(Type));//Type已经是指针了
     for (int i=0;i<param_size;i++){
+        /*
+         new_node->param_type[i]=param_types[i];
+         */
         Type tmp_type=ifExist(param_types[i]);
         if(tmp_type==NULL){
             printf("不存在第%d个参数的类型\n",i+1);
@@ -268,7 +391,7 @@ struct node * search_variable(char* vi_name){
     return NULL;
 }
 
-/******输入变量名，返回变量类型（变量/函数）*******/
+/******输入变量名，返回变量类型（变量返回值/函数）*******/
 Type search_variable_type(char* vi_name){
     /*
      按名查找变量类型
@@ -315,6 +438,65 @@ void check_all_func_defined(){
         printf("所有函数均已定义\n");
     }
 }
+int able_define_func_bytype(char *func_name,Type return_type ,int param_size,Type* param_types,int is_defining){
+    /*
+     输入：
+     func_name 函数名
+     param_size 函数形参综述
+     param_types 函数参数的类型数组
+     is_defining 定义函数设置为1，声明设置为0（因为C语言没有bool类型，用整型代替）
+     返回值：
+     0. 重复定义，不可以定义
+     1. 没声明过，可以定义
+     2. 声明过，和之前声明的符合，可以定义
+     */
+    struct node* rep_func=search_func(func_name);
+    if(rep_func==NULL){
+        return 1;//没声明过，可以定义
+    }
+    else{
+        //查找到同名的函数声明/定义
+        printf("查找到同名的函数声明/定义\n");
+        if(rep_func->is_defined){//已经定义过了
+            if(is_defining){
+                printf("重定义函数\n");
+                return 0;
+            }
+            //是否可以在定义之后声明，应该也不可以
+            else{
+                printf("在定义之后声明\n");
+                return 0;
+            }
+        }
+        //没定义过、只声明过，检查现在的声明/定义和之前的声明(返回值类型，形参表中变量个数和类型)是否冲突
+        if(!isEqual(return_type, rep_func->type)){
+            printf("与之前的同名函数声明冲突：函数返回值类型不同\n");
+            return 0;
+        }
+        //just be declared and watch for colision
+        if(param_size!=rep_func->param_size){
+            //之前声明函数和现在要定义/声明的函数的参数个数不同
+            printf("原有：%d,当前：%d\n",rep_func->param_size,param_size);
+            printf("与之前的同名函数声明冲突：函数参数表参数个数不同\n");
+            return 0;
+        }
+        else{
+            //之前声明函数和现在要定义/声明的函数的参数个数相同
+            for(int i=0;i<param_size;i++){
+                if(!isEqual(rep_func->param_type[i], param_types[i])){
+                    printf("当前函数第%d个参数与已声明函数的参数类型不一致\n",i+1);
+                    return 0;
+                }
+            }
+            printf("与之前的同名函数声明一致\n");
+            if(is_defining){
+                rep_func->is_defined=1;
+            }
+            return 2;
+        }
+    }
+}
+
 int able_define_func(char *func_name,int param_size,char** param_types,int is_defining){
     /*
      输入：
@@ -380,6 +562,7 @@ int able_define_func(char *func_name,int param_size,char** param_types,int is_de
 }
 
 
+
 /*
 int cmp_consistence(struct node* n1,struct node* n2){
     if(n1->param_size!=n2->param_size){
@@ -405,7 +588,7 @@ int search_repeat(char* vi_name){
      */
     struct node *pet=search_variable(vi_name);
     Type pet_struct_type=NULL;
-    pet_struct_type=ifExist(vi_name);
+    pet_struct_type=ifExistStruct(vi_name);
     if (pet==NULL){
         printf("全局范围内无同名变量\n");
         if(space_deep==1){//struct is global variable 全局变量的变量名需要和结构体类型比较
@@ -469,7 +652,7 @@ void delete_space_unit(int is_struct,...){
     printf("删除域，删除之前当前域的深度为%d\n",space_deep);
     if(is_struct){//如果这个域对应一个结构体
         struct_name=va_arg(arg_ptr, char*);//结构体名字
-        struct_type=ifExist(struct_name);
+        struct_type=ifExistStruct(struct_name);
         if(struct_type==NULL){
             printf("当前结构体类型不存在\n");
             //应该会存在
