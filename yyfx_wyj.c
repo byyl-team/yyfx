@@ -174,6 +174,111 @@ int VarDec(gramtree* node,char* name_,int dimension)
     
 }
 
+void CompSt(struct gramtree* node) //LC DefList StmtList RC
+{
+    struct gramtree* cur = node->leftchild;  //cur:LC
+    cur = node->rightchild;  //cur:DefList
+    insert_space_unit();
+    DefList(cur);
+    cur = cur->rightchild;  //cur:StmtList
+    StmtList(cur);
+
+}
+
+void DefList(struct gramtree* node)
+{
+    if(node==NULL)  //空的产生式
+    {
+        return;
+    }
+    struct gramtree* cur= node->leftchild; //Def DefList
+    Def(cur);
+    cur = cur->rightchild;
+    DefList(cur);
+}
+
+void Def(struct gramtree* node)  //Specifier DecList SEMI
+{
+    struct gramtree* cur = node->leftchild;  //cur:Specifier
+    Type specifier_tp = Specifier(cur);
+    cur = cur->rightchild;
+    DecList(cur,specifier_tp);
+}
+
+
+void DecList(struct gramtree* node,Type type_)
+{
+    struct gramtree* cur = node->leftchild;
+    Dec(cur,type_);  //得到维度  MARK!!!!
+    if(cur->rightchild==NULL)  //Dec
+    {
+        return;
+    }
+    else  //Dec COMMA DecList
+    {
+        cur = cur->rightchild;  //cur:COMMA
+        cur = cur->rightchild;  //cur:DecList
+        DecList(cur,type_);
+    }
+    
+}
+
+void Dec(struct gramtree* node,Type type_)
+{
+    struct gramtree* cur = node->leftchild;
+    int dimension = 0;
+    char* name_;
+    dimension = VarDec(cur,name_,dimension);
+    if(dimension==0)
+    {
+        insert_variable_unit(name_,type_);
+    }
+    else
+    {
+        insert_array_unit(name_, dimension, type_);
+    }
+    if(cur->rightchild==NULL)  //VarDec
+    {
+        return;
+    }
+    else   //VarDec ASSIGNOP Exp
+    {
+        cur = cur->rightchild;  //cur:ASSIGNOP
+        cur = cur->rightchild;  //cur:Exp
+        Type right_tp = Exp(cur);    //这里用到思宇和译元的函数
+        Type left_tp = search_variable_type(name_);
+        if(isEqual(left_tp,right_tp))
+        {
+            return;
+        }
+        else
+        {
+            printf("Error type 5 at Line %d: Type mismatched for assignment.\n",cur->lineno);
+            return;
+        }
+        
+    }
+    
+}
+
+void StmtList(struct gramtree* node)
+{
+    if(node==NULL)  //空产生式
+    {
+        return;
+    }
+    struct gramtree* cur = node->leftchild;  //Stmt StmtList
+    Stmt(cur);
+    cur = cur->rightchild;  //cur:StmtList
+    StmtList(cur);
+}
+
+void Stmt(struct gramtree* node)
+{
+    
+}
+
+
 int main()
 {
 
