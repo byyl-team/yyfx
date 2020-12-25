@@ -451,8 +451,52 @@ int search_repeat(char* vi_name){
 
 
 /***********删除目前栈顶的域**************/
-void delete_space_unit(){
+void delete_space_unit(int is_struct,...){
+    /*
+     二更：
+     如果是结构体的域，那么在这个消失的时候，要把其中的所有变量，其实也就是结构体的成员变量
+     调用王亚菁的接口加入结构体类型当中，完成结构体这个类型的定义
+     增加一个int 1->是结构体
+     ...是char*类型，输入当前这个域对应的结构体名字
+     根据名字查找结构体
+     Type ifExist(char* name_);  //是否存在某个名字的类型，参数：名字  返回值：存在则返回该Type，不存在返回NULL
+     Type StructureAdd(Type struct_,int memnum,...);
+     */
+    va_list arg_ptr;
+    char* struct_name;
+    Type struct_type;
+    va_start(arg_ptr,is_struct);//从memnum（的下一个）开始获取变量
     printf("删除域，删除之前当前域的深度为%d\n",space_deep);
+    if(is_struct){//如果这个域对应一个结构体
+        struct_name=va_arg(arg_ptr, char*);//结构体名字
+        struct_type=ifExist(struct_name);
+        if(struct_type==NULL){
+            printf("当前结构体类型不存在\n");
+            //应该会存在
+            return;
+        }
+        space_deep--;
+        struct node *p=top->forw;
+        while (p!=NULL) {
+            top->forw=p->space_forw_node;//更换表头为下一个node
+            //再在hash中删除p
+            int val=pjw_hash(p->vi_name);
+            hash_table[val].forw=p->hash_forw_node;
+            /*
+             Type StructureAdd(Type struct_,int memnum,...);  (循环)成员变量Type，成员变量名称char*,...
+             如何从p中得到其类型和名称
+             */
+            struct_type=StructureAdd(struct_type, 1,p->param_type,p->vi_name);
+            struct node *tmpp=p;
+            p=p->space_forw_node;
+            free(tmpp);//释放内存
+        }
+        struct space_unit *tmp_space=top;
+        top=top->forw_space;//删除这个域
+        free(tmp_space);
+        printf("删除域，删除之后当前域的深度为%d\n",space_deep);
+        return;
+    }
     /*
      删除栈顶space中的所有变量
      栈顶space中的所有变量一定都在hash表的表头，因此容易删除
@@ -471,8 +515,6 @@ void delete_space_unit(){
         top->forw=p->space_forw_node;//更换表头为下一个node
         //再在hash中删除p
         int val=pjw_hash(p->vi_name);
-        /*val=pjw(p->ptr->name);//!!!!!!!!!!!!!!!!!!!!!*/
-        
         hash_table[val].forw=p->hash_forw_node;
         struct node *tmpp=p;
         p=p->space_forw_node;
