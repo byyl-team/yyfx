@@ -45,7 +45,7 @@ Type newBasic(int type_)  //0:整数  1：浮点数
     } 
 }
 
-Type newArray(Type type_,int size_)
+Type newArray(Type type_)
 {
     if(typeNum>=MAXTYPENUM)
     {
@@ -54,7 +54,6 @@ Type newArray(Type type_,int size_)
     }
     typelist[typeNum].kind = ARRAY;
     typelist[typeNum].u.array.elem = type_;
-    typelist[typeNum].u.array.size = size_;
     typelist[typeNum].u.array.dimension = type_->u.array.dimension+1;
     //在1后面插入类型
     typelist[typeNum].nxt = typelist[1].nxt;
@@ -63,7 +62,7 @@ Type newArray(Type type_,int size_)
     typelist[1].nxt = typeNum;
     typelist[typeNum].pre = 1;
     typeNum++;
-    hideType(type_);  //基本类型从全局类型中删去
+    //hideType(type_);  //基本类型从全局类型中删去  基类不能删！！
     return typelist+typeNum-1;
 }
 
@@ -237,7 +236,7 @@ void printType(Type t)
     else if(t->kind==ARRAY)
     {
         printType(t->u.array.elem);
-        printf("[%d]",t->u.array.size);
+        printf("[ ]");
     }
     else if(t->kind==STRUCTURE)
     {
@@ -329,11 +328,13 @@ int main()
     Type temp,temp2,temp3,temp4,temp5;
     temp5 = newStructure("lalala");
     temp = newBasic(0);
-    temp = newArray(temp,3);
+    temp = newArray(temp);
+    temp= newArray(temp);
     temp2 = newBasic(1);
     temp5 = StructureAdd(temp5,2,temp,"naughty",temp2,"boy");
     printf("***\n");
     printTypeList();
+    
     temp3 = structMem(temp5,1,"boy");
     if(isEqual(temp2,temp3))
     {
