@@ -66,7 +66,7 @@ struct node * search_variable(char* vi_name);//按名查找变量，返回最内
 Type search_variable_type(char* vi_name);//输入变量名，返回变量类型（变量/函数）
 struct node* search_func(char *func_name);//按名搜索函数在变量符号表中的指针
 int search_repeat(char* vi_name);//变量查重，如果有重复就返回true
-void delete_space_unit();//删除目前栈顶的域
+void delete_space_unit(int is_struct,...);//删除目前栈顶的域
 int pjw_hash(char *name);//哈希函数
 struct node* search_func(char *func_name);//按名搜索函数在变量符号表中的指针
 void check_all_func_defined();//检查所有声明的函数是否定义了
