@@ -23,6 +23,10 @@ void ExtDef(gramtree* node)
 {
     gramtree* cur = node->leftchild;
     Type specifier = Specifier(cur);  //nameÊÇSpecifierÒ¶½ÚµãµÄÖµ
+    if(specifier==NULL)  //Specifier³ö´í
+    {
+        return;
+    }
     //Èç¹û¶¨ÒåÈ«¾Ö±äÁ¿
     if(strcmp(cur->rightchild->name,"ExtDecList")==0)  //Specifier ExtDecList SEMI
     {
@@ -84,10 +88,9 @@ Type StructSpecifier(gramtree* node)
         cur = cur->rightchild;  //cur:OptTag
         cur = cur->rightchild;  //cur:LC
         cur = cur->rightchild;  //cur:DefList
-        DefList(cur);
-        Type struct_cur = newStructure(struct_name);
-        //µ÷ÓÃ¼Öğ¥éÅµÄº¯Êı£¬É¾³ıÓò£¬±äÁ¿·Åµ½½á¹¹Ìåstruct_curÀï
-        //return ĞÂ½¨µÄType
+        DefList(cur,1);
+        Type struct_tp = delete_struct_space(struct_name);
+        return struct_tp;  //return ĞÂ½¨µÄType
     }
     else if(strcmp(cur->rightchild->name,"Tag")==0)   //STRUCT Tag
     {
@@ -97,6 +100,7 @@ Type StructSpecifier(gramtree* node)
         if(struct_tp==NULL)   //¸ÃÃû×ÖµÄ½á¹¹Ìå²»´æÔÚ
         {
             printf("Error type 17 at Line %d: Undefined structure \"%s\"\n",cur->rightchild->lineno,struct_name);
+            return NULL;
         }
         return struct_tp;
     }
@@ -172,6 +176,25 @@ int VarDec(gramtree* node,char* name_,int dimension)
     {
         int dims = VarDec(cur,name_,dimension);
         return dims+1;
+    }int judge_type(Type type_)  //0:int  1£ºfloat  2£ºarray  3:struct
+    {
+        if(type_->kind==BASIC)
+        {
+            if(type_->u.basic==0)  //0:int
+            {
+                return 0;
+            }
+            else return 1;  //1:float
+        }
+        else if(type_->kind==ARRAY)  //2:array
+        {
+            return 2;
+        }
+        else
+        {
+            return 3;  //struct
+        }
+        
     }
     else  //Î´¶¨ÒåµÄ²úÉúÊ½
     {
@@ -197,8 +220,11 @@ void FunDec(Type return_type,struct gramtree tree,int is_defining){
         int *var_num=(char*)malloc(sizeof(int));
         *var_num=0;
         Typelist=VarList(varlist,var_num);
+        if(Typelist==NULL){
+            insert_func_unit_bytype(func_name,return_type,0,NULL,0);
+        }
         //¶¨Òå¶ÔÓ¦µÄº¯Êı
-        insert_func_unit_bytype(func_name,return_type,var_num,Typelist,1);
+        insert_func_unit_bytype(func_name,return_type,var_num,Typelist,0);
         return;
     }
     if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
@@ -230,7 +256,10 @@ Type* VarList(struct gramtree tree, int *var_num){
      */
     if(tree->leftchild->rightchild==NULL){
         *var_num=1;
-        Type type=ParamDec(tree->leftchild);
+        Type type=ParamDec(tree->leftchild);//P
+        if(type==NULL){
+            return NULL;
+        }
         Type* typelist=(Type*)malloc(sizeof(Type));
         typelist[0]=type;
         //memcpy(typelist,&type,sizeof(Type));//ok
@@ -238,7 +267,10 @@ Type* VarList(struct gramtree tree, int *var_num){
     }
     //¶à¸ö¶ù×Ó(ParamDec COMMA VarList)
     else{
-        Type first_para_type=ParamDec(gramtree->leftchild);//ParamDecÀàĞÍ
+        Type first_para_type=ParamDec(gramtree->leftchild);//ParamDecÀàĞÍ P
+        if(first_para_type=NULL){
+            return VarList(gramtree->leftchild->rightchild->rightchild,var_num);
+        }
         Type *typelist=VarList(gramtree->leftchild->rightchild->rightchild,var_num);//VarListÀàĞÍ±í
         //´ËÊ±µÄvar_numÊÇVarListÖĞµÃµ½µÄ
         Type *curlist=(Type*)malloc(sizeof(Type)*(*var_num+1));
@@ -251,6 +283,9 @@ Type* VarList(struct gramtree tree, int *var_num){
 
 Type ParamDec(struct gramtree tree){
     Type specifier= Specifier(tree->leftchild);
+    if(specifier==NULL){
+        return NULL;
+    }
     char *shadiao;
     specifier=VarDec(tree->leftchild->rightchild,shadiao,specifier);
     //int VarDec(gramtree* node,char* name_,int dimension);
@@ -265,38 +300,42 @@ void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:ÊÇ·ñÊ
         insert_space_unit(0);
         //º¯Êı¶¨ÒåÊ±ÓòµÄ²åÈëÔÚFunDecphoningÍê³É
     }
-    DefList(cur);
+    DefList(cur,0);
     cur = cur->rightchild;  //cur:StmtList
     StmtList(cur);
     //void delete_space_unit(int is_struct,...)
     delete_space_unit(0);
 }
 
-void DefList(struct gramtree* node)
+void DefList(struct gramtree* node,int flag)
 {
     if(node==NULL)  //¿ÕµÄ²úÉúÊ½
     {
         return;
     }
     struct gramtree* cur= node->leftchild; //Def DefList
-    Def(cur);
+    Def(cur,flag);
     cur = cur->rightchild;
-    DefList(cur);
+    DefList(cur,flag);
 }
 
-void Def(struct gramtree* node)  //Specifier DecList SEMI
+void Def(struct gramtree* node,int flag)  //Specifier DecList SEMI
 {
     struct gramtree* cur = node->leftchild;  //cur:Specifier
     Type specifier_tp = Specifier(cur);
+    if(specifier_tp==NULL)   //ËµÃ÷specifier³ö´íÁË
+    {
+        return;
+    }
     cur = cur->rightchild;
-    DecList(cur,specifier_tp);
+    DecList(cur,specifier_tp,flag);
 }
 
 
-void DecList(struct gramtree* node,Type type_)
+void DecList(struct gramtree* node,Type type_,int flag)
 {
     struct gramtree* cur = node->leftchild;
-    Dec(cur,type_);  
+    Dec(cur,type_,flag);
     if(cur->rightchild==NULL)  //Dec
     {
         return;
@@ -305,12 +344,12 @@ void DecList(struct gramtree* node,Type type_)
     {
         cur = cur->rightchild;  //cur:COMMA
         cur = cur->rightchild;  //cur:DecList
-        DecList(cur,type_);
+        DecList(cur,type_,flag);
     }
     
 }
 
-void Dec(struct gramtree* node,Type type_)
+void Dec(struct gramtree* node,Type type_,int flag)  //flag 1£º½á¹¹Ìå  0£ºº¯Êı
 {
     struct gramtree* cur = node->leftchild;
     int dimension = 0;
@@ -318,7 +357,7 @@ void Dec(struct gramtree* node,Type type_)
     dimension = VarDec(cur,name_,dimension);
     if(dimension==0)
     {
-        insert_variable_unit_bytype(name_,type_);
+        insert_variable_unit(name_,type_);
     }
     else
     {
@@ -330,6 +369,11 @@ void Dec(struct gramtree* node,Type type_)
     }
     else   //VarDec ASSIGNOP Exp
     {
+        if(flag)
+        {
+            printf("Error type 15 at Line %d: Illegal initialization in a structure.\n");  //´íÎóÀàĞÍ15£º½á¹¹Ìå¶¨ÒåÊ±¶ÔÓò½øĞĞ³õÊ¼»¯
+            return;
+        }
         cur = cur->rightchild;  //cur:ASSIGNOP
         cur = cur->rightchild;  //cur:Exp
         Type right_tp = Exp(cur);    //ÕâÀïÓÃµ½Ë¼ÓîºÍÒëÔªµÄº¯Êı
