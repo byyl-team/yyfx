@@ -59,5 +59,6 @@ bool isEqual(Type a,Type b);   //判断两个类型是否等价
 bool hideType(Type struct_);  //把这个结构体从链表中去掉
 void printType(Type t);      //打印该类型信息
 void printTypeList();        //打印全局类型链表
+int judge_type(Type type_);   //0:int  1：float  2：array  3:struct
 
 #endif

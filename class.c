@@ -31,7 +31,26 @@ Type ifExistStruct(char* name_)
     }
     return NULL;
 }
-
+int judge_type(Type type_)  //0:int  1£ºfloat  2£ºarray  3:struct
+{
+    if(type_->kind==BASIC)
+    {
+        if(type_->u.basic==0)  //0:int
+        {
+            return 0;
+        }
+        else return 1;  //1:float
+    }
+    else if(type_->kind==ARRAY)  //2:array
+    {
+        return 2;
+    }
+    else
+    {
+        return 3;  //struct
+    }
+    
+}
 Type ifExist(char* name_)
 {
     int i;
