@@ -40,9 +40,10 @@ struct node{
  要注意区分
  */
 struct space_unit{//代表一个域，其实是一个链表
+    char * space_name;
     struct node * forw;//这个域链表的表头node指针(是最新插入的)
     struct space_unit * forw_space;//在space栈中的下一个space
-    char *name;//随便加一个，可能对debug有用
+    int is_func;
 };
 /*
  space_unit中包含两个指针
@@ -58,7 +59,7 @@ struct hash_cao{//hash table中的一个槽，一个链表
 //struct space_unit * top;
 /************开始的时候执行，为哈希表分配空间**************/
 void init();
-void insert_space_unit(char *space_name);//插入一个域space
+void insert_space_unit(int is_func,...);//插入一个域space
 void insert_variable_unit(char *vi_name,char * type);//创建一个变量（非函数、非数组），插入变量符号表中
 void insert_variable_unit_bytype(char *vi_name,Type type);
 void insert_array_unit(char *array_name, int dimension, Type array_type);//创建数组变量，把数组变量插入到符号表中
@@ -78,5 +79,5 @@ struct node* search_func(char *func_name);//按名搜索函数在变量符号表
 void check_all_func_defined();//检查所有声明的函数是否定义了
 int able_define_func(char *func_name,int param_size,char** param_types,int is_defining);//是否可以定义/声明当前的函数
 int able_define_func_bytype(char *func_name,Type return_type,int param_size,Type* param_types,int is_defining);
-
+struct space_unit* find_nearest_func_space();
 #endif /* variabletable_h */

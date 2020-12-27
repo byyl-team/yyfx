@@ -25,15 +25,26 @@ void init(){
 }
 
 /*************插入一个域space **************/
-void  insert_space_unit(char *space_name){
+void  insert_space_unit(int is_func,...){
     /*
      插入一个域
      输入：域名（如果不需要此域名，请告知我进行修改）
      */
     space_deep++;
     struct space_unit* new_space=(struct space_unit*)malloc(sizeof(struct space_unit));
-    new_space->name=(char*)malloc(sizeof(char)*40);//加油！
-    strcpy(new_space->name, space_name);
+    new_space->is_func=is_func;
+    va_list arg_ptr;
+    va_start(arg_ptr,is_func);//从memnum（的下一个）开始获取变量
+    if(is_func){
+        char *space_name;
+        //printf("******* %s *********\n",space_name);
+        space_name=va_arg(arg_ptr, char*);//结构体名字
+        //new_space->space_name=space_name;
+        //还是用strcpy
+        //printf("******* %s *********\n",space_name);
+        new_space->space_name=(char*)malloc(sizeof(48));
+        strcpy(new_space->space_name, space_name);
+    }
     if(top==NULL){
         top=new_space;
         new_space->forw_space=NULL;
@@ -423,6 +434,10 @@ struct node* search_func(char *func_name){
     }
     return NULL;
 }
+struct node* last_func(){
+    return NULL;
+}
+
 void check_all_func_defined(){
     /*检查所有声明的函数是否定义了*/
     struct node* tmp_func=func_top;
@@ -632,6 +647,34 @@ int search_repeat(char* vi_name){
     }
 }
 
+Type delete_struct_space(char *struct_name){
+    if(search_repeat(struct_name)){
+        printf("有重名结构体或变量\n");
+        return NULL;
+    }
+    Type struct_type=newStructure(struct_name);
+    space_deep--;
+    struct node *p=top->forw;
+    while (p!=NULL) {
+        top->forw=p->space_forw_node;//更换表头为下一个node
+        //再在hash中删除p
+        int val=pjw_hash(p->vi_name);
+        hash_table[val].forw=p->hash_forw_node;
+        /*
+         Type StructureAdd(Type struct_,int memnum,...);  (循环)成员变量Type，成员变量名称char*,...
+         如何从p中得到其类型和名称
+         */
+        struct_type=StructureAdd(struct_type, 1,p->param_type,p->vi_name);
+        struct node *tmpp=p;
+        p=p->space_forw_node;
+        free(tmpp);//释放内存
+    }
+    struct space_unit *tmp_space=top;
+    top=top->forw_space;//删除这个域
+    free(tmp_space);
+    printf("删除域，删除之后当前域的深度为%d\n",space_deep);
+    return struct_type;
+}
 
 /***********删除目前栈顶的域**************/
 void delete_space_unit(int is_struct,...){
@@ -653,11 +696,11 @@ void delete_space_unit(int is_struct,...){
     if(is_struct){//如果这个域对应一个结构体
         struct_name=va_arg(arg_ptr, char*);//结构体名字
         struct_type=ifExistStruct(struct_name);
-        if(struct_type==NULL){
-            printf("当前结构体类型不存在\n");
-            //应该会存在
+        if(struct_type!=NULL||search_repeat(struct_name)){
+            printf("有重名结构体或变量\n");
             return;
         }
+        struct_type=newStructure(struct_name);
         space_deep--;
         struct node *p=top->forw;
         while (p!=NULL) {
@@ -708,7 +751,17 @@ void delete_space_unit(int is_struct,...){
     free(tmp_space);
     printf("删除域，删除之后当前域的深度为%d\n",space_deep);
 }
-
+struct space_unit* find_nearest_func_space(){
+    //is_func=1
+    struct space_unit *p=top;
+    while(p!=NULL)
+    {
+        if(p->is_func){
+            return p;
+        }
+    }
+    return NULL;
+}
 /***************开个玩笑，潘校的hash函数******************/
 int pjw_hash(char *name){
     int val=0,i;
