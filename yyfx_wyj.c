@@ -37,7 +37,14 @@ void ExtDef(gramtree* node)
     //如果定义函数
     else if(strcmp(cur->rightchild->name,"FunDec")==0)
     {
-
+        if(strcmp(cur->rightchild->rightchild,"SEMI")==0){
+            //函数的声明
+            FunDec(specifier,cur->rightchild,0);
+            return;
+        }
+        //函数的定义
+        FunDec(specifier,cur->rightchild,1);
+        Compst(cur->rightchild->rightchild,1);//OK
     }
 }
 Type Specifier(gramtree* node)   //TYPE | STRUCTSPECIFIER
@@ -71,7 +78,7 @@ Type StructSpecifier(gramtree* node)
     gramtree* cur = node->leftchild;
     if(strcmp(cur->rightchild->name,"OptTag")==0)  //STRUCT OptTag LC DefList RC
     {
-        insert_space_unit();  //新建一个结构体域，贾馥榕的代码会改，不传参
+        insert_space_unit(0);  //新建一个结构体域，贾馥榕的代码会改，不传参
         char* struct_name;
         OptTag(cur->rightchild,struct_name);  //得到结构体的名字
         cur = cur->rightchild;  //cur:OptTag
@@ -134,7 +141,7 @@ void ExtDecList(gramtree* node,Type specifier_tp)
     dimension = VarDec(cur,name_,dimension);   
     if(dimension==0)
     {
-        insert_variable_unit(name_,specifier_tp);  //变量插入变量表
+        insert_variable_unit_bytype(name_,specifier_tp);  //变量插入变量表
     }
     else
     {
@@ -173,16 +180,96 @@ int VarDec(gramtree* node,char* name_,int dimension)
     }
     
 }
+void FunDec(Type return_type,struct gramtree tree,int is_defining){
+    //函数加入符号表
+    if(is_defining==0){
+        //函数声明
+        if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
+            //无参数
+            char *func_name=tree->leftchild->name;
+            insert_func_unit_bytype(func_name,return_type,0,NULL,0);
+            return;
+        }
+        //有参数
+        char *func_name=tree->leftchild->name;
+        Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
+        struct gramtree varlist=tree->leftchild->rightchild->rightchild;
+        int *var_num=(char*)malloc(sizeof(int));
+        *var_num=0;
+        Typelist=VarList(varlist,var_num);
+        //定义对应的函数
+        insert_func_unit_bytype(func_name,return_type,var_num,Typelist,1);
+        return;
+    }
+    if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
+        //无参数
+        char *func_name=tree->leftchild->name;
+        insert_space_unit(1,func_name);//加入一个域
+        insert_func_unit_bytype(func_name,return_type,0,NULL,1);
+        return;
+    }
+    //有参数
+    char *func_name=tree->leftchild->name;
+    insert_space_unit(1,func_name);//加入一个域 ok
+    Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
+    struct gramtree varlist=tree->leftchild->rightchild->rightchild;
+    int *var_num=(char*)malloc(sizeof(int));
+    *var_num=0;
+    Typelist=VarList(varlist,var_num);
+    //定义对应的函数
+    insert_func_unit_bytype(func_name,return_type,var_num,Typelist,1);
+}
+Type* VarList(struct gramtree tree, int *var_num){
+    //最开始传的是0
+    //一个儿子（ParamDec）
+    //*var_num=*var_num+1;
+    /*
+     调用这个函数的时候一定要注意要给var_num指针分配动态内存空间
+     第一次调用这个函数的时候传进来的参数是0
+     调用结束之后就变成分析得到的数值了
+     */
+    if(tree->leftchild->rightchild==NULL){
+        *var_num=1;
+        Type type=ParamDec(tree->leftchild);
+        Type* typelist=(Type*)malloc(sizeof(Type));
+        typelist[0]=type;
+        //memcpy(typelist,&type,sizeof(Type));//ok
+        return typelist;
+    }
+    //多个儿子(ParamDec COMMA VarList)
+    else{
+        Type first_para_type=ParamDec(gramtree->leftchild);//ParamDec类型
+        Type *typelist=VarList(gramtree->leftchild->rightchild->rightchild,var_num);//VarList类型表
+        //此时的var_num是VarList中得到的
+        Type *curlist=(Type*)malloc(sizeof(Type)*(*var_num+1));
+        curlist[0]=first_para_type;
+        memcpy(curlist+sizeof(Type),typelist,sizeof(Type)*(*var_num));
+        *var_num=*var_num+1;
+        return typelist;
+    }
+}
 
-void CompSt(struct gramtree* node) //LC DefList StmtList RC
+Type ParamDec(struct gramtree tree){
+    Type specifier= Specifier(tree->leftchild);
+    char *shadiao;
+    specifier=VarDec(tree->leftchild->rightchild,shadiao,specifier);
+    //int VarDec(gramtree* node,char* name_,int dimension);
+    return specifier;//返回变量类型
+}
+
+void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是否是函数
 {
     struct gramtree* cur = node->leftchild;  //cur:LC
     cur = node->rightchild;  //cur:DefList
-    insert_space_unit();
+    if(flag==0){
+        insert_space_unit(0);
+        //函数定义时域的插入在FunDecphoning完成
+    }
     DefList(cur);
     cur = cur->rightchild;  //cur:StmtList
     StmtList(cur);
-
+    //void delete_space_unit(int is_struct,...)
+    delete_space_unit(0);
 }
 
 void DefList(struct gramtree* node)
@@ -209,7 +296,7 @@ void Def(struct gramtree* node)  //Specifier DecList SEMI
 void DecList(struct gramtree* node,Type type_)
 {
     struct gramtree* cur = node->leftchild;
-    Dec(cur,type_);  //得到维度  MARK!!!!
+    Dec(cur,type_);  
     if(cur->rightchild==NULL)  //Dec
     {
         return;
@@ -231,7 +318,7 @@ void Dec(struct gramtree* node,Type type_)
     dimension = VarDec(cur,name_,dimension);
     if(dimension==0)
     {
-        insert_variable_unit(name_,type_);
+        insert_variable_unit_bytype(name_,type_);
     }
     else
     {
@@ -275,7 +362,22 @@ void StmtList(struct gramtree* node)
 
 void Stmt(struct gramtree* node)
 {
-    
+    struct gramtree* cur = node->leftchild;
+    if(strcmp(cur->name,"Exp")==0)  //Exp SEMI
+    {
+        Exp(cur);
+    }
+    else if(strcmp(cur->name,"CompSt")==0)  //CompSt
+    {
+        CompSt(cur,0);  //不是函数！ok
+    }
+    else if(strcmp(cur->name,"RETURN")==0)  //RETURN Exp SEMI
+    {
+        cur = cur->rightchild;  //Exp
+        Type return_tp = Exp(cur);
+
+        
+    }
 }
 
 
