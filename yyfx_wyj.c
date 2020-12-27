@@ -1,27 +1,48 @@
 #include<stdio.h>
 #include<stdlib.h>
+#include"class.h"
+#include"gramtree.h"
+#include"variabletable.h"
+void Program(struct gramtree* node);
+void ExtDefList(struct gramtree* node);
+void ExtDef(struct gramtree* node);
+Type Specifier(struct gramtree* node);
+Type StructSpecifier(struct gramtree* node);
+void Tag(struct gramtree* node,char* name_);
+void ExtDecList(struct gramtree* node,Type specifier_tp);
+int VarDec(struct gramtree* node,char* name_,int dimension);
+void FunDec(Type return_type,struct gramtree* tree,int is_defining);
+Type* VarList(struct gramtree* tree, int *var_num);
+Type ParamDec(struct gramtree* tree);
+void CompSt(struct gramtree* node,int flag);
+void DefList(struct gramtree* node,int flag);
+void Def(struct gramtree* node,int flag);
+void DecList(struct gramtree* node,Type type_,int flag);
+void Dec(struct gramtree* node,Type type_,int flag);
+void StmtList(struct gramtree* node);
+void Stmt(struct gramtree* node);
+void OptTag(struct gramtree* node,char* name_);
 
-
-void Program(gramtree* node)
+void Program(struct gramtree* node)
 {
     ExtDefList(node->leftchild);
 }
-void ExtDefList(gramtree* node)   //ExtDef 
+void ExtDefList(struct gramtree* node)   //ExtDef 
 {
     if(node==NULL){  // 空的产生式
         return;
     }
     if(node->leftchild!=NULL)  //ExtDef ExtDefList
     {
-        gramtree* cur = node->leftchild;
+        struct gramtree* cur = node->leftchild;
         ExtDef(cur);
         ExtDefList(cur->rightchild);
     }
 }
 
-void ExtDef(gramtree* node)
+void ExtDef(struct gramtree* node)
 {
-    gramtree* cur = node->leftchild;
+    struct gramtree* cur = node->leftchild;
     Type specifier = Specifier(cur);  //name是Specifier叶节点的值
     if(specifier==NULL)  //Specifier出错
     {
@@ -41,7 +62,7 @@ void ExtDef(gramtree* node)
     //如果定义函数
     else if(strcmp(cur->rightchild->name,"FunDec")==0)
     {
-        if(strcmp(cur->rightchild->rightchild,"SEMI")==0){
+        if(strcmp(cur->rightchild->rightchild->name,"SEMI")==0){
             //函数的声明
             FunDec(specifier,cur->rightchild,0);
             return;
@@ -51,9 +72,9 @@ void ExtDef(gramtree* node)
         Compst(cur->rightchild->rightchild,1);//OK
     }
 }
-Type Specifier(gramtree* node)   //TYPE | STRUCTSPECIFIER
+Type Specifier(struct gramtree* node)   //TYPE | STRUCTSPECIFIER
 {
-    gramtree* cur = node->leftchild;
+    struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"TYPE")==0)  //TYPE terminal
     {
         if(strcmp(cur->IDTYPE,"int")==0) //int
@@ -77,9 +98,9 @@ Type Specifier(gramtree* node)   //TYPE | STRUCTSPECIFIER
     
 }
 
-Type StructSpecifier(gramtree* node)
+Type StructSpecifier(struct gramtree* node)
 {
-    gramtree* cur = node->leftchild;
+    struct gramtree* cur = node->leftchild;
     if(strcmp(cur->rightchild->name,"OptTag")==0)  //STRUCT OptTag LC DefList RC
     {
         insert_space_unit(0);  //新建一个结构体域，贾馥榕的代码会改，不传参
@@ -96,7 +117,7 @@ Type StructSpecifier(gramtree* node)
     {
         char* struct_name;
         Tag(cur->rightchild,struct_name);
-        Type struct_tp = ifExist(char* name_);
+        Type struct_tp = ifExist(struct_name);
         if(struct_tp==NULL)   //该名字的结构体不存在
         {
             printf("Error type 17 at Line %d: Undefined structure \"%s\"\n",cur->rightchild->lineno,struct_name);
@@ -106,7 +127,7 @@ Type StructSpecifier(gramtree* node)
     }
 }
 
-void OptTag(gramtree* node,char* name_)
+void OptTag(struct gramtree* node,char* name_)
 {
     if(node==NULL)
     {
@@ -114,7 +135,7 @@ void OptTag(gramtree* node,char* name_)
         if(name_!=NULL) free(name_);
         return;
     }
-    gramtree* cur = node->leftchild;
+    struct gramtree* cur = node->leftchild;
     if(cur!=NULL)   //ID
     {
         if(name_!=NULL) free(name_);   //先释放再申请
@@ -123,7 +144,7 @@ void OptTag(gramtree* node,char* name_)
     }
 }
 
-void Tag(gramtree* node,char* name_)
+void Tag(struct gramtree* node,char* name_)
 {
     if(node==NULL)
     {
@@ -137,9 +158,9 @@ void Tag(gramtree* node,char* name_)
     }
 }
 
-void ExtDecList(gramtree* node,Type specifier_tp)
+void ExtDecList(struct gramtree* node,Type specifier_tp)
 {
-    gramtree* cur = node->leftchild;
+    struct gramtree* cur = node->leftchild;
     char* name_;
     int dimension = 0;
     dimension = VarDec(cur,name_,dimension);   
@@ -162,9 +183,9 @@ void ExtDecList(gramtree* node,Type specifier_tp)
     ExtDecList(cur,specifier_tp);  //一直到ExtDecList产生式是VarDec为止
 }
 
-int VarDec(gramtree* node,char* name_,int dimension)
+int VarDec(struct gramtree* node,char* name_,int dimension)
 {
-    gramtree* cur = node->leftchild;
+    struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"ID")==0)   //ID
     {
         if(name_!=NULL) free(name_);
@@ -176,25 +197,6 @@ int VarDec(gramtree* node,char* name_,int dimension)
     {
         int dims = VarDec(cur,name_,dimension);
         return dims+1;
-    }int judge_type(Type type_)  //0:int  1：float  2：array  3:struct
-    {
-        if(type_->kind==BASIC)
-        {
-            if(type_->u.basic==0)  //0:int
-            {
-                return 0;
-            }
-            else return 1;  //1:float
-        }
-        else if(type_->kind==ARRAY)  //2:array
-        {
-            return 2;
-        }
-        else
-        {
-            return 3;  //struct
-        }
-        
     }
     else  //未定义的产生式
     {
@@ -203,7 +205,8 @@ int VarDec(gramtree* node,char* name_,int dimension)
     }
     
 }
-void FunDec(Type return_type,struct gramtree tree,int is_defining){
+
+void FunDec(Type return_type,struct gramtree* tree,int is_defining){
     //函数加入符号表
     if(is_defining==0){
         //函数声明
@@ -216,7 +219,7 @@ void FunDec(Type return_type,struct gramtree tree,int is_defining){
         //有参数
         char *func_name=tree->leftchild->name;
         Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
-        struct gramtree varlist=tree->leftchild->rightchild->rightchild;
+        struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
         int *var_num=(char*)malloc(sizeof(int));
         *var_num=0;
         Typelist=VarList(varlist,var_num);
@@ -238,14 +241,14 @@ void FunDec(Type return_type,struct gramtree tree,int is_defining){
     char *func_name=tree->leftchild->name;
     insert_space_unit(1,func_name);//加入一个域 ok
     Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
-    struct gramtree varlist=tree->leftchild->rightchild->rightchild;
+    struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
     int *var_num=(char*)malloc(sizeof(int));
     *var_num=0;
     Typelist=VarList(varlist,var_num);
     //定义对应的函数
     insert_func_unit_bytype(func_name,return_type,var_num,Typelist,1);
 }
-Type* VarList(struct gramtree tree, int *var_num){
+Type* VarList(struct gramtree* tree, int *var_num){
     //最开始传的是0
     //一个儿子（ParamDec）
     //*var_num=*var_num+1;
@@ -267,11 +270,11 @@ Type* VarList(struct gramtree tree, int *var_num){
     }
     //多个儿子(ParamDec COMMA VarList)
     else{
-        Type first_para_type=ParamDec(gramtree->leftchild);//ParamDec类型 P
+        Type first_para_type=ParamDec(tree->leftchild);//ParamDec类型 P
         if(first_para_type=NULL){
-            return VarList(gramtree->leftchild->rightchild->rightchild,var_num);
+            return VarList(tree->leftchild->rightchild->rightchild,var_num);
         }
-        Type *typelist=VarList(gramtree->leftchild->rightchild->rightchild,var_num);//VarList类型表
+        Type *typelist=VarList(tree->leftchild->rightchild->rightchild,var_num);//VarList类型表
         //此时的var_num是VarList中得到的
         Type *curlist=(Type*)malloc(sizeof(Type)*(*var_num+1));
         curlist[0]=first_para_type;
@@ -281,7 +284,7 @@ Type* VarList(struct gramtree tree, int *var_num){
     }
 }
 
-Type ParamDec(struct gramtree tree){
+Type ParamDec(struct gramtree* tree){
     Type specifier= Specifier(tree->leftchild);
     if(specifier==NULL){
         return NULL;
@@ -349,6 +352,7 @@ void DecList(struct gramtree* node,Type type_,int flag)
     
 }
 
+
 void Dec(struct gramtree* node,Type type_,int flag)  //flag 1：结构体  0：函数
 {
     struct gramtree* cur = node->leftchild;
@@ -404,6 +408,7 @@ void StmtList(struct gramtree* node)
     StmtList(cur);
 }
 
+
 void Stmt(struct gramtree* node)
 {
     struct gramtree* cur = node->leftchild;
@@ -425,8 +430,4 @@ void Stmt(struct gramtree* node)
 }
 
 
-int main()
-{
 
-    return 0;
-}

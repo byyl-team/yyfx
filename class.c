@@ -9,11 +9,11 @@ void initTypeList()
 {
     typelist = (Type)malloc(MAXTYPENUM*sizeof(struct Type_));
     typelist[0].kind = BASIC;   //0处是int型
-    typelist[0].u.basic = INT;
+    typelist[0].u.basic = INT_;
     typelist[0].pre = -1;      //链表首
     typelist[0].nxt = 1; 
     typelist[1].kind = BASIC;   //1处是float型
-    typelist[1].u.basic = FLOAT;
+    typelist[1].u.basic = FLOAT_;
     typelist[1].pre = 0;     //链表第二个
     typelist[1].nxt = -1;
     typeNum = 2;
@@ -73,7 +73,7 @@ Type ifExist(char* name_)
 
 Type newBasic(int type_)  //0:整数  1：浮点数
 {
-    if(type_==INT)
+    if(type_==INT_)
     {
         return typelist;
     }

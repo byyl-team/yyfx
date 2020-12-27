@@ -6,8 +6,8 @@
 #include<stdbool.h>
 #include<string.h>
 #include<stdarg.h>
-#define INT 0
-#define FLOAT 1
+#define INT_ 0
+#define FLOAT_ 1
 #define MAXTYPENUM 10000  //最大的变量类型数量
 #define MAXMEMNUM 10000
 
