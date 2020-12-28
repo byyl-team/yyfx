@@ -80,4 +80,5 @@ void check_all_func_defined();//检查所有声明的函数是否定义了
 int able_define_func(char *func_name,int param_size,char** param_types,int is_defining);//是否可以定义/声明当前的函数
 int able_define_func_bytype(char *func_name,Type return_type,int param_size,Type* param_types,int is_defining);
 struct space_unit* find_nearest_func_space();
+Type create_array(Type array_type, int dimension);
 #endif /* variabletable_h */
