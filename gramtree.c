@@ -43,7 +43,7 @@ struct gramtree *gramTree(char* name,int num,...)
         		char*t;
         		t=(char*)malloc(sizeof(char* )*40);
         		strcpy(t,yytext);
-        		newfather->IDTYPE=t;
+        		newfather->content=t;
         	}
         	
         	else if(!strcmp(newfather->name,"INT")) {newfather->INT=atoi(yytext);}
@@ -68,7 +68,7 @@ void circulate(struct gramtree* newfather,int level,int flag)
 		    		printf("  ");
 			if(newfather->lineno!=-1){ //产生空的语法单元不需要打印信息
 		    		printf("%s ",newfather->name);//打印语法单元名字，ID/TYPE/INTEGER要打印yytext的值
-		    		if((!strcmp(newfather->name,"ID"))||(!strcmp(newfather->name,"TYPE"))||(!strcmp(newfather->name,"RELOP")))printf(":%s ",newfather->IDTYPE);
+		    		if((!strcmp(newfather->name,"ID"))||(!strcmp(newfather->name,"TYPE"))||(!strcmp(newfather->name,"RELOP")))printf(":%s ",newfather->content);
 		    		else if(!strcmp(newfather->name,"INT"))printf(":%d",newfather->INT);
 				else if(!strcmp(newfather->name,"INT8")) printf(":%d",newfather->INT);
 				else if(!strcmp(newfather->name,"INT16")) printf(":%d",newfather->INT);

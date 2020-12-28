@@ -8,9 +8,11 @@ struct gramtree
 	char* name;//语法单元名称
 	struct gramtree *leftchild;//左节点
 	struct gramtree *rightchild;//右节点
+	char* content;//语法单元语义值
+	char* type;//语法单元数据类型，主要用于等号和操作符左右类型匹配判断
+	float value;//场数值（记录int和float的数据值）
 	union//存放ID、TYPE、INT、FLOAT节点的值
 	{
-		char *IDTYPE;
 		int INT;
 		float FLOAT;
 	};

@@ -35,9 +35,19 @@ Program : ExtDefList {$$=gramTree("Program",1,$1);printf("\n");circulate($$,0,fl
 ExtDefList : ExtDef ExtDefList{$$=gramTree("ExtDefList",2,$1,$2);}
 | {$$=gramTree("ExtDefList",0,-1);}
 ;
-ExtDef : Specifier ExtDecList SEMI{$$=gramTree("ExtDef",3,$1,$2,$3);}
+ExtDef : Specifier ExtDecList SEMI//变量定义:检查是否重定义Error type 3
+	{
+	$$=gramTree("ExtDef",3,$1,$2,$3);
+	if(exitvar($2)) printf("Error type 3 at Line %d:Redefined Variable 		'%s'\n",yylineno,$2->content);
+	else newvar(2,$1,$2);
+	}
 | Specifier SEMI{$$=gramTree("ExtDef",2,$1,$2);}
-|Specifier FunDec CompSt {$$=gramTree("ExtDef",3,$1,$2,$3);}
+|Specifier FunDec CompSt//函数定义:检查实际返回类型与函数类型是否匹配Error type 8
+        {
+        $$=gramTree("ExtDef",3,$1,$2,$3);
+        newfunc(4,$1);
+        }
+| Specifier FunDec SEMI{$$=gramTree("ExtDef",3,$1,$2,$3);}
 |ExpDef_miss_SEMI{$$=gramTree("ExtDef",1,$1);flag=0;}
 ;
 ExpDef_miss_SEMI : Specifier ExtDecList {$$=gramTree("ExpDef_miss_SEMI",2,$1,$2);printf("Error type B at line %d :Missing SEMI \n",$2->lineno);flag=0;}
