@@ -117,7 +117,7 @@ Type StructSpecifier(struct gramtree* node)
     if(strcmp(cur->rightchild->name,"OptTag")==0)  //STRUCT OptTag LC DefList RC
     {
         insert_space_unit(0);  //新建一个结构体域，贾馥榕的代码会改，不传参
-        char* struct_name;
+        char* struct_name=NULL;
         OptTag(cur->rightchild,struct_name);  //得到结构体的名字
         cur = cur->rightchild;  //cur:OptTag
         cur = cur->rightchild;  //cur:LC
@@ -177,25 +177,30 @@ void ExtDecList(struct gramtree* node,Type specifier_tp)
 {
     printf("ExtDecList\n");
     struct gramtree* cur = node->leftchild;
-    char* name_;
+    char* name_=NULL;
     int dimension = 0;
     dimension = VarDec(cur,name_,dimension);
+    printf("after VarDec\n");
     if(dimension==0)
     {
+        printf("dimension=0\n");
         insert_variable_unit_bytype(name_,specifier_tp);  //变量插入变量表
     }
     else
     {
+        printf("dimension!=0\n");
         insert_array_unit(name_, dimension, specifier_tp); //数组插入变量表
     }
     //VarDec
     if(cur->rightchild==NULL)
     {
+        printf("cur->rightchild==NULL\n");
         return;
     }
     //VarDec COMMA ExtDecList
     cur = cur->rightchild;  //cur:COMMA
     cur = cur->rightchild;  //cur:ExtDecList
+    
     ExtDecList(cur,specifier_tp);  //一直到ExtDecList产生式是VarDec为止
 }
 
@@ -205,9 +210,11 @@ int VarDec(struct gramtree* node,char* name_,int dimension)
     struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"ID")==0)   //ID
     {
+        printf("ID\n");
         if(name_!=NULL) free(name_);
         name_ = (char*)malloc(sizeof(char)*strlen(node->IDTYPE));
         strcpy(name_,node->IDTYPE);
+        printf("cpy ok\n");
         return dimension;
     }
     else if(strcmp(cur->name,"VarDec")==0)  //VarDec LB INT RB
@@ -220,7 +227,6 @@ int VarDec(struct gramtree* node,char* name_,int dimension)
         printf("undeclared VarDec productor!\n");
         return 0;
     }
-    
 }
 
 void FunDec(Type return_type,struct gramtree* tree,int is_defining){
@@ -312,7 +318,7 @@ Type ParamDec(struct gramtree* tree){
         
     }
     
-    char *shadiao;
+    char *shadiao=NULL;
     
     int dem=VarDec(tree->leftchild->rightchild,shadiao,0);
     
