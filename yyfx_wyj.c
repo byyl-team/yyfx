@@ -22,10 +22,12 @@ void Dec(struct gramtree* node,Type type_,int flag);
 void StmtList(struct gramtree* node);
 void Stmt(struct gramtree* node);
 void OptTag(struct gramtree* node,char* name_);
+Type Exp(struct gramtree* node){};
 
 void Program(struct gramtree* node)
 {
     ExtDefList(node->leftchild);
+    printf("");
 }
 void ExtDefList(struct gramtree* node)   //ExtDef 
 {
@@ -69,7 +71,7 @@ void ExtDef(struct gramtree* node)
         }
         //函数的定义
         FunDec(specifier,cur->rightchild,1);
-        Compst(cur->rightchild->rightchild,1);//OK
+        CompSt(cur->rightchild->rightchild,1);//OK
     }
 }
 Type Specifier(struct gramtree* node)   //TYPE | STRUCTSPECIFIER
@@ -220,14 +222,14 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
         char *func_name=tree->leftchild->name;
         Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
         struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
-        int *var_num=(char*)malloc(sizeof(int));
+        int *var_num=(int*)malloc(sizeof(int));
         *var_num=0;
         Typelist=VarList(varlist,var_num);
         if(Typelist==NULL){
             insert_func_unit_bytype(func_name,return_type,0,NULL,0);
         }
         //定义对应的函数
-        insert_func_unit_bytype(func_name,return_type,var_num,Typelist,0);
+        insert_func_unit_bytype(func_name,return_type,*var_num,Typelist,0);
         return;
     }
     if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
@@ -242,11 +244,11 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
     insert_space_unit(1,func_name);//加入一个域 ok
     Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
     struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
-    int *var_num=(char*)malloc(sizeof(int));
+    int *var_num=(int*)malloc(sizeof(int));
     *var_num=0;
     Typelist=VarList(varlist,var_num);
     //定义对应的函数
-    insert_func_unit_bytype(func_name,return_type,var_num,Typelist,1);
+    insert_func_unit_bytype(func_name,return_type,*var_num,Typelist,1);
 }
 Type* VarList(struct gramtree* tree, int *var_num){
     //最开始传的是0
@@ -283,17 +285,40 @@ Type* VarList(struct gramtree* tree, int *var_num){
         return typelist;
     }
 }
-
 Type ParamDec(struct gramtree* tree){
+
     Type specifier= Specifier(tree->leftchild);
+
     if(specifier==NULL){
+
         return NULL;
+
     }
+
     char *shadiao;
-    specifier=VarDec(tree->leftchild->rightchild,shadiao,specifier);
+
+    int dem=VarDec(tree->leftchild->rightchild,shadiao,0);
+
+    if(dem==0){
+
+        return specifier;
+
+    }
+
+    else{
+
+        //Type create_array(Type array_type, int dimension)
+
+        Type new_array_type=create_array(specifier, dem);
+
+        return new_array_type;
+
+    }
+
     //int VarDec(gramtree* node,char* name_,int dimension);
-    return specifier;//返回变量类型
+
 }
+
 
 void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是否是函数
 {
@@ -361,7 +386,8 @@ void Dec(struct gramtree* node,Type type_,int flag)  //flag 1：结构体  0：函数
     dimension = VarDec(cur,name_,dimension);
     if(dimension==0)
     {
-        insert_variable_unit(name_,type_);
+        insert_variable_unit_bytype(name_,type_);
+        //insert_variable_unit(name_,type_);
     }
     else
     {
