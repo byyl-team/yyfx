@@ -1,0 +1,6 @@
+float f, m[6];
+
+int main(){
+  int q[10];
+}
+
