@@ -22,6 +22,7 @@ void init(){
     hash_table=(struct hash_cao*)malloc(16384*sizeof(struct hash_cao));
     func_top=NULL;
     top=NULL;
+    insert_space_unit(0);
 }
 
 /*************插入一个域space **************/
@@ -79,6 +80,7 @@ void insert_variable_unit_bytype(char *vi_name,Type type){
     int val=pjw_hash(vi_name);
     printf("插入哈希表的编号为%d的槽子\n",val);
     //hash_table[val]此时已经（在init函数中）分配了相应的空间，可以直接访问了
+    printf("1 if\n");
     if(hash_table[val].forw==NULL){//. or ->
         //原来这个槽空
         /*hash_table[val]的类型是hash_cao*/
@@ -90,6 +92,7 @@ void insert_variable_unit_bytype(char *vi_name,Type type){
         new_node->hash_forw_node=hash_table[val].forw;
         hash_table[val].forw=new_node;
     }
+    printf("2 if\n");
     //给栈顶的域top这个维度的链表中也插入变量节点
     if(top->forw==NULL){//top是栈顶的域，top->forw是栈顶域链表的头指针
         top->forw=new_node;
@@ -170,7 +173,8 @@ void insert_array_unit(char *array_name, int dimension,Type array_type){
         //重名，返回！
     }
     Type new_array_type=array_type;//最底层的是我们的array_type 什么类型的数组
-    for(int i=dimension-1;i>=0;i--){
+    int i;
+    for(i=dimension-1;i>=0;i--){
         //从低到高创建数组变量
         new_array_type=newArray(new_array_type);
     }
@@ -210,7 +214,8 @@ void insert_array_unit(char *array_name, int dimension,Type array_type){
 }
 Type create_array(Type array_type, int dimension){
     Type new_array_type=array_type;//最底层的是我们的array_type 什么类型的数组
-    for(int i=dimension-1;i>=0;i--){
+    int i;
+    for(i=dimension-1;i>=0;i--){
         //从低到高创建数组变量
         new_array_type=newArray(new_array_type);
     }
@@ -256,7 +261,8 @@ void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Typ
     //new_node->param=(struct unit**)malloc(param_size*sizeof(struct unit*));
     /*二维数组如何分配内存C语言 https://blog.csdn.net/wzy_1988/article/details/9136373*/
     new_node->param_type=(Type *)malloc(param_size*sizeof(Type));//Type已经是指针了
-    for (int i=0;i<param_size;i++){
+    int i;
+    for (i=0;i<param_size;i++){
          new_node->param_type[i]=param_types[i];
     }
     printf("构造了函数名为%s，所在域深度为%d，有%d个参数的函数变量\n",new_node->vi_name,new_node->space_deep,new_node->param_size);
@@ -342,7 +348,8 @@ void insert_func_unit(char *func_name,char * return_type,int param_size,char** p
     //new_node->param=(struct unit**)malloc(param_size*sizeof(struct unit*));
     /*二维数组如何分配内存C语言 https://blog.csdn.net/wzy_1988/article/details/9136373*/
     new_node->param_type=(Type *)malloc(param_size*sizeof(Type));//Type已经是指针了
-    for (int i=0;i<param_size;i++){
+    int i;
+    for (i=0;i<param_size;i++){
         /*
          new_node->param_type[i]=param_types[i];
          */
@@ -505,7 +512,8 @@ int able_define_func_bytype(char *func_name,Type return_type ,int param_size,Typ
         }
         else{
             //之前声明函数和现在要定义/声明的函数的参数个数相同
-            for(int i=0;i<param_size;i++){
+	    int i;
+            for(i=0;i<param_size;i++){
                 if(!isEqual(rep_func->param_type[i], param_types[i])){
                     printf("当前函数第%d个参数与已声明函数的参数类型不一致\n",i+1);
                     return 0;
@@ -560,7 +568,8 @@ int able_define_func(char *func_name,int param_size,char** param_types,int is_de
         }
         else{
             //之前声明函数和现在要定义/声明的函数的参数个数相同
-            for(int i=0;i<param_size;i++){
+	    int i;
+            for(i=0;i<param_size;i++){
                 //rep_func一个Type，当前一个Type(需要ifExist得到)，通过isEqual判断即可
                 Type new_type=ifExist(param_types[i]);
                 if(new_type==NULL){

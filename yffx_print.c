@@ -35,6 +35,7 @@ Type Args(struct gramtree* node,int count,Type* type_list);
 
 void Program(struct gramtree* node)
 {
+    init();
     ExtDefList(node->leftchild);
     printf("Program\n");
 }
@@ -203,13 +204,14 @@ void ExtDecList(struct gramtree* node,Type specifier_tp)
 
 int VarDec(struct gramtree* node,char* name_,int dimension)
 {
-    printf("VarDec\n");
+    printf("%s \n",node->name);
     struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"ID")==0)   //ID
     {
         if(name_!=NULL) free(name_);
-        name_ = (char*)malloc(sizeof(char)*strlen(node->content));
-        strcpy(name_,node->content);
+        name_ = (char*)malloc(sizeof(char)*strlen(cur->content));
+
+        strcpy(name_,cur->content);
         return dimension;
     }
     else if(strcmp(cur->name,"VarDec")==0)  //VarDec LB INT RB
@@ -514,8 +516,8 @@ Type Exp(struct gramtree* node)
                     Type * Type_list;
                     Args(cur->rightchild->rightchild,Count,Type_list);
     				if(search_func(cur->content)!=NULL){
-    				int common=0;
-    				for(int i=0;i<Count;i++){
+    				int common=0,i;
+    				for(i=0;i<Count;i++){
     					if(isEqual(Type_list[i],search_func(cur->content)->param_type[i])) common++;
 				}
                             if(Count==search_func(cur->content)->param_size&&common==Count-1) return search_variable_type(cur->content);
