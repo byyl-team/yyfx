@@ -127,9 +127,9 @@ Type StructSpecifier(struct gramtree* node)
         cur = cur->rightchild;  //cur:LC
         cur = cur->rightchild;  //cur:DefList
         DefList(cur,1);
-	printf("return from DefList\n");
+	//printf("return from DefList\n");
         Type struct_tp = delete_struct_space(struct_name);
-	printf("return from delete struct space\n");
+	//printf("return from delete struct space\n");
         return struct_tp;  //return 新建的Type
     }
     else if(strcmp(cur->rightchild->name,"Tag")==0)   //STRUCT Tag
@@ -213,13 +213,13 @@ int VarDec(struct gramtree* node,char** name_,int dimension)
     struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"ID")==0)   //ID
     {
-	printf("entered if ID\n");
+	//printf("entered if ID\n");
         if(*name_!=NULL) free(*name_);
-	printf("feeed\n");
+	//printf("feeed\n");
         *name_ = (char*)malloc(sizeof(char)*strlen(cur->content));
-	printf("malloced\n");
+	//printf("malloced\n");
         strcpy(*name_,cur->content);
-printf("strcpyedd name:%s\n",*name_);
+//printf("strcpyedd name:%s\n",*name_);
         return dimension;
     }
     else if(strcmp(cur->name,"VarDec")==0)  //VarDec LB INT RB
@@ -243,12 +243,12 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
         if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
             //无参数
             char *func_name=tree->leftchild->content;
-	    printf("lalala %s\n",func_name);
+	    //printf("lalala %s\n",func_name);
             insert_func_unit_bytype(func_name,return_type,0,NULL,0);
             return;
         }
         //有参数
-        char *func_name=tree->leftchild->name;
+        char *func_name=tree->leftchild->content;
         Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
         struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
         int *var_num=(int*)malloc(sizeof(int));
@@ -269,7 +269,7 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
         return;
     }
     //有参数
-    char *func_name=tree->leftchild->name;
+    char *func_name=tree->leftchild->content;
     insert_space_unit(1,func_name);//加入一个域 ok
     Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
     struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
@@ -353,16 +353,14 @@ Type ParamDec(struct gramtree* tree){
 void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是否是函数
 {
     printf("in CompSt name is %s\n",node->name);
-    printf("CompSt\n");
+    //printf("CompSt\n");
     struct gramtree* cur = node->leftchild;  //cur:LC
     cur = cur->rightchild;  //cur:DefList
     if(flag==0){
         insert_space_unit(0);
         //函数定义时域的插入在FunDecphoning完成
     }
-   if(cur==NULL){
-	printf("in CompSt DefList is NULL\n");
-}   
+  
     DefList(cur,0);
     cur = cur->rightchild;  //cur:StmtList
     StmtList(cur);
@@ -375,14 +373,11 @@ void DefList(struct gramtree* node,int flag)
     printf("DefList name:%s\n",node->name);
     if(node==NULL)  //空的产生式
     {
-	printf("node==NULL\n");
+	//printf("node==NULL\n");
         return;
     }
-    printf("heree\n");
     struct gramtree* cur= node->leftchild; //Def DefList
     if(cur==NULL) return;
-    printf("Def name:%s\n",cur->name);
-    printf("going to Def\n");
     Def(cur,flag);
     cur = cur->rightchild;
     DefList(cur,flag);
@@ -390,10 +385,8 @@ void DefList(struct gramtree* node,int flag)
 
 void Def(struct gramtree* node,int flag)  //Specifier DecList SEMI
 {
-    if(node==NULL) printf("Def is NULL!\n");
     printf("Def name:%s\n",node->name);
     struct gramtree* cur = node->leftchild;  //cur:Specifier
-    printf("ready to Specifier\n");
     Type specifier_tp = Specifier(cur);
     if(specifier_tp==NULL)   //说明specifier出错了
     {
@@ -508,7 +501,7 @@ Type Exp(struct gramtree* node)
 {
     printf("Exp name:%s\n",node->name);
     struct gramtree* cur=node->leftchild;
-    printf("Exp->leftchild:  %s\n",cur->name);
+    //printf("Exp->leftchild:  %s\n",cur->name);
     if(strcmp(cur->name,"INT")==0||strcmp(cur->name,"INT16")==0||strcmp(cur->name,"INT8")==0){
     	if(cur->rightchild==NULL) return newBasic(0);
     	else if(cur->rightchild->name=="ASSIGNOP"){//检查赋值号左边出现中只有右值的表达式Error type 6
@@ -527,7 +520,7 @@ Type Exp(struct gramtree* node)
     else if(strcmp(cur->name,"ID")==0){
 	printf("cur->name=ID\n");
     	if(cur->rightchild==NULL){
-		printf("Exp->ID\n");
+		//printf("Exp->ID\n");
     		if(search_variable(cur->content)!=NULL) return search_variable_type(cur->content);//不确定
     		else printf("Error type 1 at Line %d:undefined variable %s\n ",cur->lineno,cur->content);
     		
