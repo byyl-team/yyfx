@@ -127,7 +127,9 @@ Type StructSpecifier(struct gramtree* node)
         cur = cur->rightchild;  //cur:LC
         cur = cur->rightchild;  //cur:DefList
         DefList(cur,1);
+	printf("return from DefList\n");
         Type struct_tp = delete_struct_space(struct_name);
+	printf("return from delete struct space\n");
         return struct_tp;  //return 新建的Type
     }
     else if(strcmp(cur->rightchild->name,"Tag")==0)   //STRUCT Tag
@@ -502,13 +504,12 @@ void Stmt(struct gramtree* node)
     }
 }
 
-
 Type Exp(struct gramtree* node)
 {
     printf("Exp name:%s\n",node->name);
     struct gramtree* cur=node->leftchild;
     printf("Exp->leftchild:  %s\n",cur->name);
-    if(strcmp(cur->name,"INT")==0){
+    if(strcmp(cur->name,"INT")==0||strcmp(cur->name,"INT16")==0||strcmp(cur->name,"INT8")==0){
     	if(cur->rightchild==NULL) return newBasic(0);
     	else if(cur->rightchild->name=="ASSIGNOP"){//检查赋值号左边出现中只有右值的表达式Error type 6
             printf("Error type 6 at Line %d:the left-hand side of an assignment must be a variable.\n ",cur->lineno);

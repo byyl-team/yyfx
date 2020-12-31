@@ -671,8 +671,10 @@ Type delete_struct_space(char *struct_name){
     }
     Type struct_type=newStructure(struct_name);
     space_deep--;
+	printf("new structure finish\n");
     struct node *p=top->forw;
     while (p!=NULL) {
+	printf("p is not NULL\n");
         top->forw=p->space_forw_node;//更换表头为下一个node
         //再在hash中删除p
         int val=pjw_hash(p->vi_name);
@@ -681,8 +683,10 @@ Type delete_struct_space(char *struct_name){
          Type StructureAdd(Type struct_,int memnum,...);  (循环)成员变量Type，成员变量名称char*,...
          如何从p中得到其类型和名称
          */
-        struct_type=StructureAdd(struct_type, 1,p->param_type,p->vi_name);
-        struct node *tmpp=p;
+	printf("before add to structure\n");
+        struct_type=StructureAdd(struct_type, 1,p->type,p->vi_name);
+	printf("after add to structure\n");        
+struct node *tmpp=p;
         p=p->space_forw_node;
         free(tmpp);//释放内存
     }
