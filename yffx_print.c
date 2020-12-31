@@ -11,14 +11,15 @@
 #include"class.h"
 #include"gramtree.h"
 #include"variabletable.h"
+#define NULL 0
 void Program(struct gramtree* node);
 void ExtDefList(struct gramtree* node);
 void ExtDef(struct gramtree* node);
 Type Specifier(struct gramtree* node);
 Type StructSpecifier(struct gramtree* node);
-void Tag(struct gramtree* node,char* name_);
+void Tag(struct gramtree* node,char** name_);
 void ExtDecList(struct gramtree* node,Type specifier_tp);
-int VarDec(struct gramtree* node,char* name_,int dimension);
+int VarDec(struct gramtree* node,char** name_,int dimension);
 void FunDec(Type return_type,struct gramtree* tree,int is_defining);
 Type* VarList(struct gramtree* tree, int *var_num);
 Type ParamDec(struct gramtree* tree);
@@ -29,7 +30,7 @@ void DecList(struct gramtree* node,Type type_,int flag);
 void Dec(struct gramtree* node,Type type_,int flag);
 void StmtList(struct gramtree* node);
 void Stmt(struct gramtree* node);
-void OptTag(struct gramtree* node,char* name_);
+void OptTag(struct gramtree* node,char** name_);
 Type Exp(struct gramtree* node);
 Type Args(struct gramtree* node,int count,Type* type_list);
 
@@ -121,7 +122,7 @@ Type StructSpecifier(struct gramtree* node)
     {
         insert_space_unit(0);  //新建一个结构体域，贾馥榕的代码会改，不传参
         char* struct_name=NULL;
-        OptTag(cur->rightchild,struct_name);  //得到结构体的名字
+        OptTag(cur->rightchild,&struct_name);  //得到结构体的名字
         cur = cur->rightchild;  //cur:OptTag
         cur = cur->rightchild;  //cur:LC
         cur = cur->rightchild;  //cur:DefList
@@ -132,7 +133,7 @@ Type StructSpecifier(struct gramtree* node)
     else if(strcmp(cur->rightchild->name,"Tag")==0)   //STRUCT Tag
     {
         char* struct_name=NULL;
-        Tag(cur->rightchild,struct_name);
+        Tag(cur->rightchild,&struct_name);
         Type struct_tp = ifExist(struct_name);
         if(struct_tp==NULL)   //该名字的结构体不存在
         {
@@ -143,25 +144,25 @@ Type StructSpecifier(struct gramtree* node)
     }
 }
 
-void OptTag(struct gramtree* node,char* name_)
+void OptTag(struct gramtree* node,char** name_)
 {
     printf("OptTag\n");
     if(node==NULL)
     {
         //结构体名字是空的
-        if(name_!=NULL) free(name_);
+        if(*name_!=NULL) free(*name_);
         return;
     }
     struct gramtree* cur = node->leftchild;
     if(cur!=NULL)   //ID
     {
-        if(name_!=NULL) free(name_);   //先释放再申请
-        name_= (char*)malloc(sizeof(char)*strlen(cur->content));
-        strcpy(name_,cur->content);
+        if(*name_!=NULL) free(*name_);   //先释放再申请
+        *name_= (char*)malloc(sizeof(char)*strlen(cur->content));
+        strcpy(*name_,cur->content);
     }
 }
 
-void Tag(struct gramtree* node,char* name_)
+void Tag(struct gramtree* node,char** name_)
 {
     printf("Tag\n");
     if(node==NULL)
@@ -170,9 +171,9 @@ void Tag(struct gramtree* node,char* name_)
     }
     if(node->leftchild!=NULL)  //ID
     {
-        if(name_!=NULL) free(name_);  //先释放再申请
-        name_ = (char*)malloc(sizeof(char)*strlen(node->leftchild->content));
-        strcpy(name_,node->leftchild->content);  //名字复制给name_
+        if(*name_!=NULL) free(*name_);  //先释放再申请
+        *name_ = (char*)malloc(sizeof(char)*strlen(node->leftchild->content));
+        strcpy(*name_,node->leftchild->content);  //名字复制给name_
     }
 }
 
@@ -180,15 +181,17 @@ void ExtDecList(struct gramtree* node,Type specifier_tp)
 {
     printf("ExtDecList\n");
     struct gramtree* cur = node->leftchild;
-    char* name_;
+    char* name_ = NULL;
     int dimension = 0;
-    dimension = VarDec(cur,name_,dimension);
+    dimension = VarDec(cur,&name_,dimension);
+    printf("ExtDecList name:%s\n",name_);
     if(dimension==0)
     {
         insert_variable_unit_bytype(name_,specifier_tp);  //变量插入变量表
     }
     else
     {
+	printf("going to insert an array.name:%s,dimension:%d",name_,dimension);
         insert_array_unit(name_, dimension, specifier_tp); //数组插入变量表
     }
     //VarDec
@@ -202,16 +205,19 @@ void ExtDecList(struct gramtree* node,Type specifier_tp)
     ExtDecList(cur,specifier_tp);  //一直到ExtDecList产生式是VarDec为止
 }
 
-int VarDec(struct gramtree* node,char* name_,int dimension)
+int VarDec(struct gramtree* node,char** name_,int dimension)
 {
     printf("%s \n",node->name);
     struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"ID")==0)   //ID
     {
-        if(name_!=NULL) free(name_);
-        name_ = (char*)malloc(sizeof(char)*strlen(cur->content));
-
-        strcpy(name_,cur->content);
+	printf("entered if ID\n");
+        if(*name_!=NULL) free(*name_);
+	printf("feeed\n");
+        *name_ = (char*)malloc(sizeof(char)*strlen(cur->content));
+	printf("malloced\n");
+        strcpy(*name_,cur->content);
+printf("strcpyedd name:%s\n",*name_);
         return dimension;
     }
     else if(strcmp(cur->name,"VarDec")==0)  //VarDec LB INT RB
@@ -234,7 +240,8 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
         //函数声明
         if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
             //无参数
-            char *func_name=tree->leftchild->name;
+            char *func_name=tree->leftchild->content;
+	    printf("lalala %s\n",func_name);
             insert_func_unit_bytype(func_name,return_type,0,NULL,0);
             return;
         }
@@ -254,7 +261,7 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
     }
     if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
         //无参数
-        char *func_name=tree->leftchild->name;
+        char *func_name=tree->leftchild->content;
         insert_space_unit(1,func_name);//加入一个域
         insert_func_unit_bytype(func_name,return_type,0,NULL,1);
         return;
@@ -316,9 +323,9 @@ Type ParamDec(struct gramtree* tree){
         
     }
     
-    char *shadiao;
+    char *shadiao = NULL;
     
-    int dem=VarDec(tree->leftchild->rightchild,shadiao,0);
+    int dem=VarDec(tree->leftchild->rightchild,&shadiao,0);
     
     if(dem==0){
         
@@ -350,6 +357,7 @@ void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是�
         insert_space_unit(0);
         //函数定义时域的插入在FunDecphoning完成
     }
+    
     DefList(cur,0);
     cur = cur->rightchild;  //cur:StmtList
     StmtList(cur);
@@ -359,12 +367,15 @@ void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是�
 
 void DefList(struct gramtree* node,int flag)
 {
-    printf("DefList\n");
+    printf("DefListtt\n");
     if(node==NULL)  //空的产生式
     {
+	printf("node==NULL\n");
         return;
     }
+    printf("heree\n");
     struct gramtree* cur= node->leftchild; //Def DefList
+    printf("going to Def\n");
     Def(cur,flag);
     cur = cur->rightchild;
     DefList(cur,flag);
@@ -408,8 +419,8 @@ void Dec(struct gramtree* node,Type type_,int flag)  //flag 1：结构体  0：�
     printf("Dec\n");
     struct gramtree* cur = node->leftchild;
     int dimension = 0;
-    char* name_;
-    dimension = VarDec(cur,name_,dimension);
+    char* name_ = NULL;
+    dimension = VarDec(cur,&name_,dimension);
     if(dimension==0)
     {
         insert_variable_unit_bytype(name_,type_);
@@ -513,7 +524,7 @@ Type Exp(struct gramtree* node)
     		{
     			if(cur->rightchild->rightchild->rightchild->name=="RP"){
                     int Count=0;
-                    Type * Type_list;
+                    Type * Type_list;   //didn't malloc!!!
                     Args(cur->rightchild->rightchild,Count,Type_list);
     				if(search_func(cur->content)!=NULL){
     				int common=0,i;
