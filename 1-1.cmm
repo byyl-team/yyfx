@@ -1,0 +1,16 @@
+float f, m[6];
+int i;
+struct ms{
+  int kk;
+} ks;
+int fun(int a, float f[2]){
+  if(i - 2 == 1){
+    q[1] = i + ks.kk;
+  }
+}
+
+int main(){
+  int q[10];
+  i = 3;
+  ks.kk = i && fun();
+}
