@@ -55,6 +55,13 @@ struct gramtree *gramTree(char* name,int num,...)
 		{
 			newfather->INT=strtol(yytext,NULL,16);
 		}
+		else
+		{
+		    newfather->leftchild = newfather->rightchild = NULL;
+		    //free(newfather);
+		    //newfather = NULL;
+
+		}
     	}
     	return newfather;
 }

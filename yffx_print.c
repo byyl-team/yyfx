@@ -350,14 +350,17 @@ Type ParamDec(struct gramtree* tree){
 
 void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是否是函数
 {
+    printf("in CompSt name is %s\n",node->name);
     printf("CompSt\n");
     struct gramtree* cur = node->leftchild;  //cur:LC
-    cur = node->rightchild;  //cur:DefList
+    cur = cur->rightchild;  //cur:DefList
     if(flag==0){
         insert_space_unit(0);
         //函数定义时域的插入在FunDecphoning完成
     }
-    
+   if(cur==NULL){
+	printf("in CompSt DefList is NULL\n");
+}   
     DefList(cur,0);
     cur = cur->rightchild;  //cur:StmtList
     StmtList(cur);
@@ -367,7 +370,7 @@ void CompSt(struct gramtree* node,int flag) //LC DefList StmtList RC  flag:是�
 
 void DefList(struct gramtree* node,int flag)
 {
-    printf("DefListtt\n");
+    printf("DefList name:%s\n",node->name);
     if(node==NULL)  //空的产生式
     {
 	printf("node==NULL\n");
@@ -375,6 +378,8 @@ void DefList(struct gramtree* node,int flag)
     }
     printf("heree\n");
     struct gramtree* cur= node->leftchild; //Def DefList
+    if(cur==NULL) return;
+    printf("Def name:%s\n",cur->name);
     printf("going to Def\n");
     Def(cur,flag);
     cur = cur->rightchild;
@@ -383,8 +388,10 @@ void DefList(struct gramtree* node,int flag)
 
 void Def(struct gramtree* node,int flag)  //Specifier DecList SEMI
 {
-    printf("Def\n");
+    if(node==NULL) printf("Def is NULL!\n");
+    printf("Def name:%s\n",node->name);
     struct gramtree* cur = node->leftchild;  //cur:Specifier
+    printf("ready to Specifier\n");
     Type specifier_tp = Specifier(cur);
     if(specifier_tp==NULL)   //说明specifier出错了
     {
@@ -467,6 +474,7 @@ void StmtList(struct gramtree* node)
         return;
     }
     struct gramtree* cur = node->leftchild;  //Stmt StmtList
+    if(cur==NULL) return;
     Stmt(cur);
     cur = cur->rightchild;  //cur:StmtList
     StmtList(cur);
@@ -479,7 +487,7 @@ void Stmt(struct gramtree* node)
     struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"Exp")==0)  //Exp SEMI
     {
-        Exp(cur);
+        Exp(cur);1
     }
     else if(strcmp(cur->name,"CompSt")==0)  //CompSt
     {
