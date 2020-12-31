@@ -487,7 +487,7 @@ void Stmt(struct gramtree* node)
     struct gramtree* cur = node->leftchild;
     if(strcmp(cur->name,"Exp")==0)  //Exp SEMI
     {
-        Exp(cur);1
+        Exp(cur);//1
     }
     else if(strcmp(cur->name,"CompSt")==0)  //CompSt
     {
@@ -505,15 +505,17 @@ void Stmt(struct gramtree* node)
 
 Type Exp(struct gramtree* node)
 {
+    printf("Exp name:%s\n",node->name);
     struct gramtree* cur=node->leftchild;
-    if(cur->name=="INT"){
+    printf("Exp->leftchild:  %s\n",cur->name);
+    if(strcmp(cur->name,"INT")==0){
     	if(cur->rightchild==NULL) return newBasic(0);
     	else if(cur->rightchild->name=="ASSIGNOP"){//检查赋值号左边出现中只有右值的表达式Error type 6
             printf("Error type 6 at Line %d:the left-hand side of an assignment must be a variable.\n ",cur->lineno);
             return NULL;
     	}
     }
-    else if(cur->name=="FLOAT"){
+    else if(strcmp(cur->name,"FLOAT")==0){
     	if(cur->rightchild==NULL) return newBasic(1);
     	else if(cur->rightchild->name=="ASSIGNOP"){//检查赋值号左边出现中只有右值的表达式Error type 6
             printf("Error type 6 at Line %d:the left-hand side of an assignment must be a variable.\n ",cur->lineno);
@@ -521,16 +523,19 @@ Type Exp(struct gramtree* node)
     	}
     }
 
-    else if(cur->name=="ID"){
+    else if(strcmp(cur->name,"ID")==0){
+	printf("cur->name=ID\n");
     	if(cur->rightchild==NULL){
-    		if(search_repeat(cur->content)) return search_variable_type(cur->content);//不确定
+		printf("Exp->ID\n");
+    		if(search_variable(cur->content)!=NULL) return search_variable_type(cur->content);//不确定
     		else printf("Error type 1 at Line %d:undefined variable %s\n ",cur->lineno,cur->content);
-    		return NULL;
+    		
+return NULL;
     	}
-    	else if(cur->rightchild->name=="LP"){
-    		if(cur->rightchild->rightchild->name=="Args")
+    	else if(strcmp(cur->rightchild->name,"LP")==0){
+    		if(strcmp(cur->rightchild->rightchild->name,"Args")==0)
     		{
-    			if(cur->rightchild->rightchild->rightchild->name=="RP"){
+    			if(strcmp(cur->rightchild->rightchild->rightchild->name,"RP")==0){
                     int Count=0;
                     Type * Type_list;   //didn't malloc!!!
                     Args(cur->rightchild->rightchild,Count,Type_list);
@@ -566,7 +571,7 @@ Type Exp(struct gramtree* node)
     				}
     			}
     		}
-    		else if(cur->rightchild->rightchild->name=="RP"){
+    		else if(strcmp(cur->rightchild->rightchild->name,"RP")==0){
     			if(search_func(cur->content)!=NULL) return search_variable_type(cur->content);
     			else//函数引用:检查是否未定义就调用Error type 2
     			{
@@ -583,23 +588,23 @@ Type Exp(struct gramtree* node)
     	}
     }
 
-    else if(cur->name=="NOT"){
-    	if(cur->rightchild->name=="Exp"){
+    else if(strcmp(cur->name,"NOT")==0){
+    	if(strcmp(cur->rightchild->name,"Exp")==0){
     		
     		return Exp(cur->rightchild);
     	}
     }
 
-    else if(cur->name=="MINUS"){
-    	if(cur->rightchild->name=="Exp"){
+    else if(strcmp(cur->name,"MINUS")==0){
+    	if(strcmp(cur->rightchild->name,"Exp")==0){
     		
     		return Exp(cur->rightchild);
     	}
     }
 
-    else if(cur->name=="Exp"){
-    	if(cur->rightchild->name=="ASSIGNOP"){
-    		if(cur->rightchild->rightchild->name=="Exp"){
+    else if(strcmp(cur->name,"Exp")==0){
+    	if(strcmp(cur->rightchild->name,"ASSIGNOP")==0){
+    		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0){
     			if(Exp(cur)==Exp(cur->rightchild->rightchild)) return Exp(cur);
     			else//检查等号左右类型匹配判断Error type 5
     			{
@@ -608,11 +613,11 @@ Type Exp(struct gramtree* node)
     			}
     		}
     	}
-    	else if(cur->rightchild->name=="AND"||cur->rightchild->name=="OR"||cur->rightchild->name=="RELOP"){
-    		if(cur->rightchild->rightchild->name=="Exp")return Exp(cur);
+    	else if(strcmp(cur->rightchild->name,"AND")==0||strcmp(cur->rightchild->name,"OR")==0||strcmp(cur->rightchild->name,"RELOP")==0){
+    		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0)return Exp(cur);
     	}
-    	else if(cur->rightchild->name=="PLUS"||cur->rightchild->name=="MINUS"||cur->rightchild->name=="STAR"||cur->rightchild->name=="DIV"){
-    		if(cur->rightchild->rightchild->name=="Exp"){
+    	else if(strcmp(cur->rightchild->name,"PLUS")==0||strcmp(cur->rightchild->name,"MINUS")==0||strcmp(cur->rightchild->name,"STAR")==0||strcmp(cur->rightchild->name,"DIV")==0){
+    		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0){
     			if(judge_type(Exp(cur))==0&&judge_type(Exp(cur->rightchild->rightchild))==0) return newBasic(0);
     			else if(judge_type(Exp(cur))==1&&judge_type(Exp(cur->rightchild->rightchild))==1) return newBasic(1);
     			else//检查操作符左右类型Error type 7
@@ -625,9 +630,9 @@ Type Exp(struct gramtree* node)
     	}
 
 
-    	else if(cur->rightchild->name=="LB"){
-    		if(cur->rightchild->rightchild->name=="Exp"){
-    			if(cur->rightchild->rightchild->rightchild->name=="RB"){
+    	else if(strcmp(cur->rightchild->name,"LB")==0){
+    		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0){
+    			if(strcmp(cur->rightchild->rightchild->rightchild->name,"RB")==0){
                     ///error 10   error 12
                     Type t=Exp(cur);
                     if(t!=NULL){
@@ -648,8 +653,8 @@ Type Exp(struct gramtree* node)
     		}
     	}
 
-    	else if(cur->rightchild->name=="DOT"){
-            if(cur->rightchild->rightchild->name=="ID"){
+    	else if(strcmp(cur->rightchild->name,"DOT")==0){
+            if(strcmp(cur->rightchild->rightchild->name,"ID")==0){
                 Type t=Exp(cur);
                 if(t!=NULL){
                     if(judge_type(t)==3){
@@ -671,14 +676,14 @@ Type Exp(struct gramtree* node)
 }
 Type Args(struct gramtree* node,int count,Type* type_list){
     struct gramtree* cur=node->leftchild;
-    if(cur->name="Exp"){
+    if(strcmp(cur->name,"Exp")==0){
         type_list[count]=Exp(cur);
         count++;
         if(cur->rightchild==NULL){
             return NULL;
         }
-        else if(cur->rightchild->name=="COMMA"){
-            if(cur->rightchild->rightchild->name=="Args"){
+        else if(strcmp(cur->rightchild->name,"COMMA")==0){
+            if(strcmp(cur->rightchild->rightchild->name,"Args")==0){
                 Args(cur->rightchild->rightchild,count,type_list);
             }
         }
