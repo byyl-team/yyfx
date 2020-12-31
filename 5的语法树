@@ -1,0 +1,44 @@
+Program (1)
+  ExtDefList (1)
+    ExtDef (1)
+      Specifier (1)
+        TYPE :float
+      ExtDecList (1)
+        VarDec (1)
+          ID :f
+        COMMA :,
+        ExtDecList (1)
+          VarDec (1)
+            VarDec (1)
+              ID :m
+            LB :[
+            INT :6
+            RB :]
+      SEMI :;
+    ExtDefList (3)
+      ExtDef (3)
+        Specifier (3)
+          TYPE :int
+        FunDec (3)
+          ID :main
+          LP :(
+          RP :)
+        Compst (3)
+          LC :{
+          DefList (4)
+            Def (4)
+              Specifier (4)
+                TYPE :int
+              DecList (4)
+                Dec (4)
+                  VarDec (4)
+                    VarDec (4)
+                      ID :q
+                    LB :[
+                    INT :10
+                    RB :]
+              SEMI :;
+            Empty : Empty
+          Empty : Empty
+          RC :}
+      Empty : Empty
