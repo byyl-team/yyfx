@@ -17,13 +17,14 @@
 %token <newfather> INT FLOAT
 %token <newfather> ID STRUCT TYPE RETURN IF ELSE WHILE SPACE SPACEN COMMA SEMI ASSIGNOP RELOP PLUS MINUS STAR DIV AND OR NOT LB RB LP RP LC RC ERROR DOT
 %type <newfather> Program ExtDefList ExtDef ExtDecList ExpDef_miss_SEMI Specifier StructSpecifier StructSpecifier_miss_RC OptTag Tag VarDec VarDec_miss_RB FunDec FunDec_miss_RP VarList ParamDec CompSt StmtList Stmt Stmt_miss_SEMI DefList Def Def_miss_SEMI Exp_miss_RB Exp_miss_RP   DecList Dec Exp  Args
+%nonassoc LOWER_THAN_Exp_RP LOWER_THAN_Exp_RB
 %right ASSIGNOP
 %left AND OR
 %left RELOP
 %left PLUS MINUS
 %left STAR DIV
 %right NOT
-%nonassoc LOWER_THAN_Exp_RP LOWER_THAN_Exp_RB
+
 %left LB RB LP RP
 %left DOT
 %nonassoc LOWER_THAN_ELSE

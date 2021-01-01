@@ -95,6 +95,7 @@ void insert_variable_unit_bytype(char *vi_name,Type type){
     printf("2 if\n");
     //给栈顶的域top这个维度的链表中也插入变量节点
     if(top->forw==NULL){//top是栈顶的域，top->forw是栈顶域链表的头指针
+
         top->forw=new_node;
         new_node->space_forw_node=NULL;
     }
@@ -224,6 +225,7 @@ Type create_array(Type array_type, int dimension){
 
 /***********输入参数类型是Type类型变量************/
 void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Type *param_types,int is_defining){
+	printf("insert_func_bybyte\n");
     /*
      创建函数（声明/定义时都要调用，因为可以判断重定义、定义与声明不符合的错误）
      输入：
@@ -234,7 +236,11 @@ void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Typ
      is_defining 定义函数设置为1，声明设置为0（因为C语言没有bool类型，用整型代替）
      输出错误的格式如要调整，请告知我修改
      */
+    if(func_top!=NULL){
+	printf("in insert_func_unit:%s\n",func_top->vi_name);
+	}
     int flag=able_define_func_bytype(func_name, return_type, param_size, param_types, is_defining);
+printf("1\n");
     if(!flag){
         printf("函数定义/声明失败\n");
         return;
@@ -245,13 +251,15 @@ void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Typ
     }
     struct node *new_node=(struct node *)malloc(sizeof(struct node));//当场建立，分配内存的思路对！不变
     new_node->vi_name=(char*)malloc(sizeof(char)*40);
-    strcpy(new_node->vi_name, func_name);//yeah
+printf("2\n");    
+strcpy(new_node->vi_name, func_name);//yeah
     //如果不存在这个类型返回啥 NULL
     new_node->type=return_type;
     new_node->space_deep=space_deep;
     new_node->is_func=1;
     //首次插入节点，is_defined未初始化，可能是任何值。防微杜渐，要初始化。逻辑：如果当前允许定义，那么就是第一个定义，否则就 不是定义是声明 ->0
-    if(is_defining){
+printf("3\n");    
+if(is_defining){
         new_node->is_defined=1;
     }
     else{
@@ -291,7 +299,9 @@ void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Typ
     }
     //插入函数的自己的链表中
     if(func_top==NULL){
+	printf("first in 函数链表\n");
         func_top=new_node;
+	printf("name is %s\n",func_top->vi_name);
         new_node->nxt_func_node=NULL;
     }
     else{
@@ -439,14 +449,21 @@ struct node* search_func(char *func_name){
      按名搜索函数在变量符号表中的指针
      输入：func_name 函数名
      */
+	printf("in search_func: func_name=%s\n",func_name);
+	if(func_top!=NULL)   
+ printf("topp name:%s\n",func_top->vi_name);
     struct node* tmp_func=func_top;
     while(tmp_func!=NULL){
+	//printf("in while\n");
+	printf("is or not func %d\n",func_top->is_func);
+        printf("tmp_func_name: %s\n",tmp_func->vi_name);
         if(!strcmp(tmp_func->vi_name, func_name)){
             printf("查找到了给定名字的函数\n");
             return tmp_func;
         }
         tmp_func=tmp_func->nxt_func_node;
     }
+    printf("search_func going to return null\n"); 
     return NULL;
 }
 struct node* last_func(){
@@ -480,7 +497,12 @@ int able_define_func_bytype(char *func_name,Type return_type ,int param_size,Typ
      1. 没声明过，可以定义
      2. 声明过，和之前声明的符合，可以定义
      */
+	printf("able\n");
+	printf("before search func\n");
+if(func_top!=NULL)
+	printf("in able: %s\n",func_top->vi_name);
     struct node* rep_func=search_func(func_name);
+	printf("after search func\n");
     if(rep_func==NULL){
         return 1;//没声明过，可以定义
     }
@@ -540,6 +562,7 @@ int able_define_func(char *func_name,int param_size,char** param_types,int is_de
      1. 没声明过，可以定义
      2. 声明过，和之前声明的符合，可以定义
      */
+//	printf("in able\n")
     struct node* rep_func=search_func(func_name);
     if(rep_func==NULL){
         return 1;//没声明过，可以定义

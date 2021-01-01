@@ -31,8 +31,8 @@ void Dec(struct gramtree* node,Type type_,int flag);
 void StmtList(struct gramtree* node);
 void Stmt(struct gramtree* node);
 void OptTag(struct gramtree* node,char** name_);
-Type Exp(struct gramtree* node);
-Type Args(struct gramtree* node,int count,Type* type_list);
+Type Exp(struct gramtree* node,int* flag);
+Type Args(struct gramtree* node,int* count,Type* type_list);
 
 void Program(struct gramtree* node)
 {
@@ -264,20 +264,32 @@ void FunDec(Type return_type,struct gramtree* tree,int is_defining){
     if(tree->leftchild->rightchild->rightchild->rightchild==NULL){
         //无参数
         char *func_name=tree->leftchild->content;
-        insert_space_unit(1,func_name);//加入一个域
+printf("fun_name: %s\n",func_name);        
+
         insert_func_unit_bytype(func_name,return_type,0,NULL,1);
-        return;
+extern struct node* func_top;
+        printf("top fun name=%s\n",func_top->vi_name);    
+        insert_space_unit(1,func_name);//加入一个域    
+return;
     }
     //有参数
     char *func_name=tree->leftchild->content;
-    insert_space_unit(1,func_name);//加入一个域 ok
+    
     Type* Typelist;//问题：是否需要提前分配内存？？？或者在函数中分配内存也行，目前是在函数中分配的
     struct gramtree* varlist=tree->leftchild->rightchild->rightchild;
     int *var_num=(int*)malloc(sizeof(int));
     *var_num=0;
     Typelist=VarList(varlist,var_num);
+    printf("varList var_num:%d\n",*var_num);
     //定义对应的函数
+    int pi=0;
+    for(pi=0;pi<*var_num;pi++){
+	if(Typelist[pi]==NULL){printf("Typelist[%d] is NULL\n",pi);}
+}
     insert_func_unit_bytype(func_name,return_type,*var_num,Typelist,1);
+    extern struct node* func_top;
+    printf("func_top name:%s\n",func_top->vi_name);
+    insert_space_unit(1,func_name);//加入一个域 ok
 }
 Type* VarList(struct gramtree* tree, int *var_num){
     printf("VarList\n");
@@ -297,22 +309,60 @@ Type* VarList(struct gramtree* tree, int *var_num){
         }
         Type* typelist=(Type*)malloc(sizeof(Type));
         typelist[0]=type;
+	if(typelist[0]==NULL){
+            printf("VarList->ParamDec: typelist=NULL\n");
+        }
         //memcpy(typelist,&type,sizeof(Type));//ok
         return typelist;
     }
     //多个儿子(ParamDec COMMA VarList)
-    else{
+else{
         Type first_para_type=ParamDec(tree->leftchild);//ParamDec类型 P
-        if(first_para_type=NULL){
+        if(first_para_type==NULL){
+            printf("first para_type is NULL\n");
             return VarList(tree->leftchild->rightchild->rightchild,var_num);
         }
         Type *typelist=VarList(tree->leftchild->rightchild->rightchild,var_num);//VarList类型表
         //此时的var_num是VarList中得到的
-        Type *curlist=(Type*)malloc(sizeof(Type)*(*var_num+1));
+        if(typelist==NULL){
+            printf("typelist  is NULL\n");
+        }
+	printf("in varList: var_num=%d\n",*var_num);
+        Type *curlist=(Type*)malloc(sizeof(Type)*((*var_num)+1));
+	printf("size of Type =%d\n",sizeof(Type));
+	printf("size of curlist=%d\n",sizeof(curlist));
+	//memcpy(curlist,&first_para_type,sizeof(Type));
         curlist[0]=first_para_type;
-        memcpy(curlist+sizeof(Type),typelist,sizeof(Type)*(*var_num));
-        *var_num=*var_num+1;
-        return typelist;
+	if(first_para_type==NULL){
+            printf("first para_type is NULL\n");
+        }
+	printf("first_para_type=%d\n",first_para_type->kind);
+        if(curlist[0]==NULL){
+            printf("curlist[0] is NULL\n");
+        }
+	int pi=0;
+	printf("curlist[0] type=%d\n",curlist[0]->kind);
+	for (pi=0; pi<*var_num;pi++) {
+            curlist[pi+1]=typelist[pi];
+        }       
+// memcpy(curlist+sizeof(Type),typelist,sizeof(Type)*(*var_num));
+	//int pi;
+	for(pi=0;pi<*var_num;pi++){
+            if(typelist[pi]==NULL){
+                printf("typelist[%d] is NULL\n",pi);
+            }
+        }
+        for (pi=0; pi<*var_num; pi++) {
+            if(curlist[pi+1]==NULL){
+                printf("curlist[%d] is NULL\n",pi+1);
+            }
+		printf("curlist[%d] type=%d\n",pi+1,curlist[pi+1]->kind);
+        }        
+*var_num=*var_num+1;
+        if (curlist==NULL) {
+            printf("curlist is NULL\n");
+        }
+        return curlist;
     }
 }
 Type ParamDec(struct gramtree* tree){
@@ -323,8 +373,7 @@ Type ParamDec(struct gramtree* tree){
         
         return NULL;
         
-    }
-    
+    }    
     char *shadiao = NULL;
     
     int dem=VarDec(tree->leftchild->rightchild,&shadiao,0);
@@ -445,7 +494,8 @@ void Dec(struct gramtree* node,Type type_,int flag)  //flag 1：结构体  0：�
         }
         cur = cur->rightchild;  //cur:ASSIGNOP
         cur = cur->rightchild;  //cur:Exp
-        Type right_tp = Exp(cur);    //这里用到思宇和译元的函数
+	int flag = 1;
+        Type right_tp = Exp(cur,&flag);    //这里用到思宇和译元的函数
         Type left_tp = search_variable_type(name_);
         if(isEqual(left_tp,right_tp))
         {
@@ -478,83 +528,143 @@ void StmtList(struct gramtree* node)
 
 void Stmt(struct gramtree* node)
 {
+    int flag=1;
     printf("Stmt\n");
     struct gramtree* cur = node->leftchild;
+    printf("in Stmt: Stmt->%s\n",cur->name);
     if(strcmp(cur->name,"Exp")==0)  //Exp SEMI
     {
-        Exp(cur);//1
+	flag = 1;
+        Exp(cur,&flag);//1
     }
-    else if(strcmp(cur->name,"CompSt")==0)  //CompSt
+    else if(strcmp(cur->name,"Compst")==0)  //CompSt
     {
-        CompSt(cur,0);  //不是函数！ok
+printf("Stmt->Compst\n");        
+CompSt(cur,0);  //不是函数！ok
     }
-    else if(strcmp(cur->name,"RETURN")==0)  //RETURN Exp SEMI
-    {
-        cur = cur->rightchild;  //Exp
-        Type return_tp = Exp(cur);
-        
-        
+//RETURN Exp SEMI
+    if(strcmp(node->leftchild->name,"RETURN")==0){
+        //查找当前函数
+        struct space_unit* space=find_nearest_func_space();
+        //根据func_name查找函数
+        struct node* func_node=search_func(space->space_name);
+	flag = 1;
+        if(!isEqual(Exp(node->leftchild->rightchild,&flag),func_node->type)){
+            printf("error8\n");
+        }
+        return;
+    }
+    //IF LP Exp RP Stmt
+    if(strcmp(node->leftchild->name,"IF")==0 && strcmp(node->leftchild->rightchild->rightchild->rightchild->rightchild->name,"Stmt")==0){
+        //因为【假设】中说明了Exp一定是int类型的，所以其实不需要判断此处Exp的类型，但是可能要对Exp做一些其他的分析，比如说Exp可能是一个表达式，那么这个表达式的操作数是否符合要求，因此有必要调用Exp函数进行分析
+printf("IF LP Exp RP Stmt\n");       
+printf("LP\n");
+ flag = 1;
+ Type exp_type=Exp(node->leftchild->rightchild->rightchild,&flag);
+printf("RP\n");        
+Stmt(node->leftchild->rightchild->rightchild->rightchild->rightchild);
+return;
+    }
+    //IF LP EXP RP STMT ELSE STMT
+    if(strcmp(node->leftchild->name,"IF")==0){
+	flag = 1;
+        Type exp_type=Exp(node->leftchild->rightchild->rightchild,&flag);
+        Stmt(node->leftchild->rightchild->rightchild->rightchild->rightchild);
+        Stmt(node->leftchild->rightchild->rightchild->rightchild->rightchild->rightchild->rightchild);
+        return;
+    }
+    //WHILE LP EXP RP STMT
+    if(strcmp(node->leftchild->name,"WHILE")==0){
+	flag = 1;
+        Type exp_type=Exp(node->leftchild->rightchild->rightchild,&flag);
+        Stmt(node->leftchild->rightchild->rightchild->rightchild->rightchild);
+        return;
     }
 }
 
-Type Exp(struct gramtree* node)
+Type Exp(struct gramtree* node,int* flag)  //是否可以作为左值
 {
-    printf("Exp name:%s\n",node->name);
+    printf("Exp namee:%s\n",node->name);
     struct gramtree* cur=node->leftchild;
     //printf("Exp->leftchild:  %s\n",cur->name);
     if(strcmp(cur->name,"INT")==0||strcmp(cur->name,"INT16")==0||strcmp(cur->name,"INT8")==0){
-    	if(cur->rightchild==NULL) return newBasic(0);
+    	if(cur->rightchild==NULL)  //INT
+        {
+            *flag = (*flag)&0;  //不能作为左值
+            return newBasic(0);
+        }
+         /*
     	else if(cur->rightchild->name=="ASSIGNOP"){//检查赋值号左边出现中只有右值的表达式Error type 6
             printf("Error type 6 at Line %d:the left-hand side of an assignment must be a variable.\n ",cur->lineno);
             return NULL;
-    	}
+    	}*/
     }
-    else if(strcmp(cur->name,"FLOAT")==0){
-    	if(cur->rightchild==NULL) return newBasic(1);
+    else if(strcmp(cur->name,"FLOAT")==0){  //FLOAT
+    	if(cur->rightchild==NULL) 
+        {
+            *flag = (*flag)&0;
+            return newBasic(1);
+        }
+        /*
     	else if(cur->rightchild->name=="ASSIGNOP"){//检查赋值号左边出现中只有右值的表达式Error type 6
             printf("Error type 6 at Line %d:the left-hand side of an assignment must be a variable.\n ",cur->lineno);
             return NULL;
-    	}
+    	}*/
     }
 
     else if(strcmp(cur->name,"ID")==0){
-	printf("cur->name=ID\n");
-    	if(cur->rightchild==NULL){
+	//printf("cur->name=ID\n");
+    	if(cur->rightchild==NULL){  //ID
 		//printf("Exp->ID\n");
-    		if(search_variable(cur->content)!=NULL) return search_variable_type(cur->content);//不确定
+		*flag = (*flag)&1;
+    		if(search_variable(cur->content)!=NULL)
+		{
+		    return search_variable_type(cur->content);//不确定
+		}
     		else printf("Error type 1 at Line %d:undefined variable %s\n ",cur->lineno,cur->content);
     		
 return NULL;
     	}
     	else if(strcmp(cur->rightchild->name,"LP")==0){
-    		if(strcmp(cur->rightchild->rightchild->name,"Args")==0)
+		*flag = (*flag)&0;
+    		if(strcmp(cur->rightchild->rightchild->name,"Args")==0)  //ID LP Args RP
     		{
     			if(strcmp(cur->rightchild->rightchild->rightchild->name,"RP")==0){
                     int Count=0;
                     Type * Type_list;   //didn't malloc!!!
-                    Args(cur->rightchild->rightchild,Count,Type_list);
+                    Type_list = (Type*)malloc(20*sizeof(Type));
+                    Args(cur->rightchild->rightchild,&Count,Type_list);
+			        printf("going to search_func in ID LP Args RP\n");
     				if(search_func(cur->content)!=NULL){
-    				int common=0,i;
-    				for(i=0;i<Count;i++){
-    					if(isEqual(Type_list[i],search_func(cur->content)->param_type[i])) common++;
-				}
-                            if(Count==search_func(cur->content)->param_size&&common==Count-1) return search_variable_type(cur->content);
-                            else{
-                                    printf("Error type 9 at Line %d:Function %s is not applicable for arguments ",cur->lineno,cur->content);
-
-                                    //printf("\"(");
-                                    //for(int i=0;i<Count-1;i++){
-                                        //printf("%s,",Type_list[i]);
-                                    //}
-                                    //printf("%s)\"",Type_list[Count-1]);
-                                    return NULL;
-                            }
+                        int common=0,i;
+			printf("Count:%d. origin params:%d\n",Count,search_func(cur->content)->param_size);
+                        for(i=0;i<Count;i++){
+			    if(search_func(cur->content)->param_type[i]==NULL) printf("func param[%d] is NULL\n",i);
+			    printf("i:%d\n",i);
+				
+                            if(isEqual(Type_list[i],search_func(cur->content)->param_type[i])) common++;printf("i:%d\n",i);
+                        }
+			printf("xunhuan ended.common:%d origin params:%d\n",common,search_func(cur->content)->param_size);
+                        if(Count==(search_func(cur->content)->param_size)&&common==Count)
+			{
+			    return search_variable_type(cur->content);
+			}
+                        else{
+				printf("Arg unfit. common num:%d func given %d params. origin func has %d params.\n",common,Count,search_func(cur->content)->param_size);
+                                printf("Error type 9 at Line %d:Function %s is not applicable for arguments ",cur->lineno,cur->content);
+                                //printf("\"(");
+                                //for(int i=0;i<Count-1;i++){
+                                    //printf("%s,",Type_list[i]);
+                                //}
+                                //printf("%s)\"",Type_list[Count-1]);
+                                return NULL;
+                        }
 
     				}
     				else//函数引用:检查是否未定义就调用Error type 2
     				{
-    				    Type t=Exp(cur);
-						if(judge_type(t)==0||judge_type(t)==1||judge_type(t)==2||judge_type(t)==3)//error 11 对普通对量使用函数调用操作符（.....）
+    				    //Type t=Exp(cur);
+						if(search_variable(cur->content)!=NULL)//error 11 对普通对量使用函数调用操作符（.....）
                         	{
                             printf("Error type 11 at Line %d:%s is not a function\n ",cur->lineno,cur->content);
                             return NULL;
@@ -565,12 +675,25 @@ return NULL;
     				}
     			}
     		}
-    		else if(strcmp(cur->rightchild->rightchild->name,"RP")==0){
-    			if(search_func(cur->content)!=NULL) return search_variable_type(cur->content);
+    		else if(strcmp(cur->rightchild->rightchild->name,"RP")==0){  //ID LP RP
+			printf("going to search_func:%s\n",cur->content);
+    			if(search_func(cur->content)!=NULL) 
+                {
+		    printf("searched func:%s\n",cur->content);
+                    if(search_func(cur->content)->param_size==0)  //应该判断函数参数是否为空
+                    {
+                        return search_variable_type(cur->content);
+                    }
+                    else
+                    {
+                        printf("Error type 9 at Line %d:Function %s is not applicable for arguments ",cur->lineno,cur->content);
+                    }
+                    
+                }        
     			else//函数引用:检查是否未定义就调用Error type 2
     			{
-    			    Type t=Exp(cur);
-					if(judge_type(t)==0||judge_type(t)==1||judge_type(t)==2||judge_type(t)==3)//error 11 对普通对量使用函数调用操作符（.....）
+					//printf("did not find func:%s\n",cur->content);
+					if(search_variable(cur->content)!=NULL)//error 11 对普通对量使用函数调用操作符（.....）
                     {
                             printf("Error type 11 at Line %d:%s is not a function\n ",cur->lineno,cur->content);
                             return NULL;
@@ -584,40 +707,94 @@ return NULL;
 
     else if(strcmp(cur->name,"NOT")==0){
     	if(strcmp(cur->rightchild->name,"Exp")==0){
-    		
-    		return Exp(cur->rightchild);
+		int tflag = 1;
+		Type cur_tp = Exp(cur->rightchild,&tflag);
+    		*flag = (*flag)&0;
+    		return cur_tp;
     	}
     }
 
     else if(strcmp(cur->name,"MINUS")==0){
     	if(strcmp(cur->rightchild->name,"Exp")==0){
-    		
-    		return Exp(cur->rightchild);
+		int tflag = 1;
+		Type cur_tp = Exp(cur->rightchild,&tflag);
+    		*flag = (*flag)&0;
+    		return cur_tp;
     	}
     }
 
     else if(strcmp(cur->name,"Exp")==0){
     	if(strcmp(cur->rightchild->name,"ASSIGNOP")==0){
     		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0){
-    			if(Exp(cur)==Exp(cur->rightchild->rightchild)) return Exp(cur);
+		int tflag = 1;
+                Type l_tp = Exp(cur,&tflag);
+		if(tflag!=1)
+		{
+		    printf("Error type 6 at Line %d:the left-hand side of an assignment must be a variable.\n ",cur->lineno);
+		    *flag = (*flag)&0;
+		    return l_tp;
+		}
+		tflag = 1;
+		*flag = (*flag)&0;
+                Type r_tp = Exp(cur->rightchild->rightchild,&tflag);
+		if(l_tp==NULL || r_tp==NULL) return NULL; 
+    			if(isEqual(l_tp,r_tp))
+			{
+			    return l_tp;
+			}
     			else//检查等号左右类型匹配判断Error type 5
     			{
     				printf("Error type 5 at Line %d:Type mismatched for assignment.\n ",cur->lineno);
-    				return NULL;
+    				return l_tp;  //是不是改为l_tp更合理一点？
     			}
     		}
     	}
-    	else if(strcmp(cur->rightchild->name,"AND")==0||strcmp(cur->rightchild->name,"OR")==0||strcmp(cur->rightchild->name,"RELOP")==0){
-    		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0)return Exp(cur);
+    	else if(strcmp(cur->rightchild->name,"AND")==0||strcmp(cur->rightchild->name,"OR")==0){
+	    int tflag = 1;
+            Type l_tp = Exp(cur,&tflag);
+	    tflag = 1;
+            Type r_tp = Exp(cur->rightchild->rightchild,&tflag); 
+	    *flag = (*flag)&0;
+	    if(l_tp==NULL || r_tp==NULL) return NULL; 
+            if(judge_type(l_tp)!=0 || judge_type(r_tp)!=0)
+            {
+                printf("Error type 7 at Line %d:Type mismatched for operands.\n",cur->lineno);
+            } 
+	    
+            return newBasic(0);
+    		//if(strcmp(cur->rightchild->rightchild->name,"Exp")==0)return Exp(cur);
     	}
+        else if(strcmp(cur->rightchild->name,"RELOP")==0)  //两边操作数要求怎么样？？？
+        {
+	    int tflag = 1;
+            Type l_tp = Exp(cur,&tflag);
+	    tflag = 1;
+            Type r_tp = Exp(cur->rightchild->rightchild,&tflag); 
+	    *flag = (*flag)&0;
+	    if(l_tp==NULL || r_tp==NULL) return NULL;
+            if(isEqual(l_tp,r_tp)) return l_tp;  
+            else//检查等号左右类型匹配判断Error type 5
+            {
+                printf("Error type 5 at Line %d:Type mismatched for assignment.\n ",cur->lineno);
+                return l_tp;  //是不是改为l_tp更合理一点？
+            }
+        }
     	else if(strcmp(cur->rightchild->name,"PLUS")==0||strcmp(cur->rightchild->name,"MINUS")==0||strcmp(cur->rightchild->name,"STAR")==0||strcmp(cur->rightchild->name,"DIV")==0){
     		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0){
-    			if(judge_type(Exp(cur))==0&&judge_type(Exp(cur->rightchild->rightchild))==0) return newBasic(0);
-    			else if(judge_type(Exp(cur))==1&&judge_type(Exp(cur->rightchild->rightchild))==1) return newBasic(1);
+		int tflag = 1;
+                Type l_tp = Exp(cur,&tflag);
+		tflag = 1;
+                Type r_tp = Exp(cur->rightchild->rightchild,&tflag);
+		*flag = (*flag)&0; 
+		if(l_tp==NULL || r_tp==NULL) return NULL;
+                if(isEqual(l_tp,r_tp))
+                {
+                    return l_tp; 
+                } 
     			else//检查操作符左右类型Error type 7
     			{
     				printf("Error type 7 at Line %d:Type mismatched for operand.\n ",cur->lineno);
-    				return NULL;
+    				return l_tp;  //返回左值？
     			}
     		}
 
@@ -628,10 +805,13 @@ return NULL;
     		if(strcmp(cur->rightchild->rightchild->name,"Exp")==0){
     			if(strcmp(cur->rightchild->rightchild->rightchild->name,"RB")==0){
                     ///error 10   error 12
-                    Type t=Exp(cur);
+		    int tflag = 1;
+                    Type t=Exp(cur,&tflag);
+		    *flag = (*flag)&1;
                     if(t!=NULL){
                         if(judge_type(t)==2){///judge_type:0int，1float,2数组，3结构体
-                            if(judge_type(Exp(cur->rightchild->rightchild))!=0){
+			    tflag = 1;
+                            if(judge_type(Exp(cur->rightchild->rightchild,&tflag))!=0){
                                 printf("Error type 12 at Line %d:%s is not an integer.\n ",cur->lineno,cur->content);
                                 return NULL;
                             }
@@ -642,6 +822,7 @@ return NULL;
                             return NULL;
                         }
                     }
+		    else return NULL;
 
     			}
     		}
@@ -649,35 +830,58 @@ return NULL;
 
     	else if(strcmp(cur->rightchild->name,"DOT")==0){
             if(strcmp(cur->rightchild->rightchild->name,"ID")==0){
-                Type t=Exp(cur);
+		printf("start Exp DOT ID\n"); 
+		int tflag = 1;
+                Type t=Exp(cur,&tflag);
+		printf("Exp DOT ID got Exp\n");
+		*flag = (*flag)&1;
                 if(t!=NULL){
+		    printf("t!=NULL\n");
                     if(judge_type(t)==3){
-                        if(structMem(t,1,cur->content)==NULL){///error 14访问结构体中未定义过的域
+			printf("Exp DOT ID Exp type is 3\n");
+                        if(structMem(t,1,cur->rightchild->rightchild->content)==NULL){///error 14访问结构体中未定义过的域
                             printf("Error type 14 at Line %d:Non-existent field \"%s\"\n",cur->lineno,cur->content);
                             return NULL;
                         }
-                        else return structMem(t,1,cur->content);
+                        else
+			{
+			    printf("found Exp DOT ID\n");
+			    return structMem(t,1,cur->rightchild->rightchild->content);
+			}
+ 
                     }
                     else{///error 13 对非结构体型变量使用DOT
                         printf("Error type 13 at Line %d:Illegal use of\".\"\n ",cur->lineno);
                         return NULL;
                     }
                 }
+		else return NULL;
             }
     	}
 
     }
+    else if(strcmp(cur->name,"LP")==0)
+    {
+	int tflag = 1;
+        return Exp(cur->rightchild,&tflag);
+    }
 }
-Type Args(struct gramtree* node,int count,Type* type_list){
+
+Type Args(struct gramtree* node,int* count,Type* type_list){
+    printf("here Args\n");
     struct gramtree* cur=node->leftchild;
     if(strcmp(cur->name,"Exp")==0){
-        type_list[count]=Exp(cur);
-        count++;
+	int tflag = 1;
+        type_list[*count]=Exp(cur,&tflag);
+        printf("Type_list[%d] fuzhile\n",*count);
+        *count = (*count)+1;
         if(cur->rightchild==NULL){
+	    printf("Args return NULL\n");
             return NULL;
         }
         else if(strcmp(cur->rightchild->name,"COMMA")==0){
             if(strcmp(cur->rightchild->rightchild->name,"Args")==0){
+		printf("Args Exp COMMA Args\n");
                 Args(cur->rightchild->rightchild,count,type_list);
             }
         }
