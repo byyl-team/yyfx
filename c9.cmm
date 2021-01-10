@@ -1,0 +1,23 @@
+
+struct XX{
+    int x;
+    float y;
+    struct YY{
+        int b;
+    } yy;
+};
+int func1();
+int a,c;
+int c;
+int main()
+{
+    struct XX a;
+    float b;
+    c = a.yy.b;
+    if(b)
+    {
+        2+1.0;
+        a+3;
+    }
+    
+}

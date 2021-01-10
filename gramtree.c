@@ -38,7 +38,7 @@ struct gramtree *gramTree(char* name,int num,...)
     	{
         	int t=va_arg(valist, int); //取第1个变长参数
         	newfather->lineno=t;
-        	if((!strcmp(newfather->name,"ID"))||(!strcmp(newfather->name,"TYPE"))||(!strcmp(newfather->name,"RELOP")))//"ID,TYPE,INTEGER，借助union保存yytext的值
+        	if((!strcmp(newfather->name,"ID"))||(!strcmp(newfather->name,"FLOAT"))||(!strcmp(newfather->name,"TYPE"))||(!strcmp(newfather->name,"RELOP")))//"ID,TYPE,INTEGER，借助union保存yytext的值
         	{
         		char*t;
         		t=(char*)malloc(sizeof(char* )*40);
@@ -75,7 +75,7 @@ void circulate(struct gramtree* newfather,int level,int flag)
 		    		printf("  ");
 			if(newfather->lineno!=-1){ //产生空的语法单元不需要打印信息
 		    		printf("%s ",newfather->name);//打印语法单元名字，ID/TYPE/INTEGER要打印yytext的值
-		    		if((!strcmp(newfather->name,"ID"))||(!strcmp(newfather->name,"TYPE"))||(!strcmp(newfather->name,"RELOP")))printf(":%s ",newfather->content);
+		    		if((!strcmp(newfather->name,"ID"))||(!strcmp(newfather->name,"FLOAT"))||(!strcmp(newfather->name,"TYPE"))||(!strcmp(newfather->name,"RELOP")))printf(":%s ",newfather->content);
 		    		else if(!strcmp(newfather->name,"INT"))printf(":%d",newfather->INT);
 				else if(!strcmp(newfather->name,"INT8")) printf(":%d",newfather->INT);
 				else if(!strcmp(newfather->name,"INT16")) printf(":%d",newfather->INT);

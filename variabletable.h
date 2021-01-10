@@ -31,6 +31,7 @@ struct node{
     //in link table
     struct node * hash_forw_node;//在hash槽链表中的下一个node节点
     struct node * space_forw_node;
+    int func_lineno;
     struct node * nxt_func_node;
 };
 /*
@@ -66,9 +67,7 @@ void insert_array_unit(char *array_name, int dimension, Type array_type);//创�
 //*********
 
 void insert_func_unit(char *func_name,char * return_type,int param_size,char** param_types,int is_defining);//创建函数
-void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Type *param_types,int is_defining);
-
-
+void insert_func_unit_bytype(char *func_name,Type return_type,int param_size,Type *param_types,int is_defining,int lineno);
 struct node * search_variable(char* vi_name);//按名查找变量，返回最内的域的同名变量的node的指针
 Type search_variable_type(char* vi_name);//输入变量名，返回变量类型（变量/函数）
 struct node* search_func(char *func_name);//按名搜索函数在变量符号表中的指针
@@ -79,7 +78,7 @@ int pjw_hash(char *name);//哈希函数
 struct node* search_func(char *func_name);//按名搜索函数在变量符号表中的指针
 void check_all_func_defined();//检查所有声明的函数是否定义了
 int able_define_func(char *func_name,int param_size,char** param_types,int is_defining);//是否可以定义/声明当前的函数
-int able_define_func_bytype(char *func_name,Type return_type,int param_size,Type* param_types,int is_defining);
+int able_define_func_bytype(char *func_name,Type return_type,int param_size,Type* param_types,int is_defining,int lineno);
 struct space_unit* find_nearest_func_space();
 Type create_array(Type array_type, int dimension);
 #endif /* variabletable_h */

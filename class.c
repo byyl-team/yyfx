@@ -108,7 +108,7 @@ Type newStructure(char* name)
 {
     if(typeNum>=MAXTYPENUM)
     {
-        printf("发生错误：变量类型过多\n");
+//        printf("发生错误：变量类型过多\n");
         exit(1);
     }
     typelist[typeNum].kind = STRUCTURE;
@@ -144,7 +144,8 @@ bool hideType(Type struct_)  //从全局变量类型链表里删去
 
 Type StructureAdd(Type struct_,int memnum,...)  //参数：父亲结构体，要包含的成员变量数目，(循环)成员变量Type，成员变量名称char*,...
 {
-    va_list arg_ptr;
+//	printf("in StructureAdd\n");printf("in StructureAdd\n");    
+va_list arg_ptr;
     va_start(arg_ptr,memnum);
     Type structi;    //循环中的成员变量type
     FieldList fieldcur;  //上一个成员变量的FieldList
@@ -158,6 +159,7 @@ Type StructureAdd(Type struct_,int memnum,...)  //参数：父亲结构体，要包含的成员
 
     struct_->u.structure->memnum += memnum;  //成员变量的个数
     int i;
+//printf("%d member\n",memnum);
     for(i=0;i<memnum;i++)  //取memnum个成员变量
     {
         structi = va_arg(arg_ptr,Type);   //成员变量的Type
@@ -187,14 +189,8 @@ Type StructureAdd(Type struct_,int memnum,...)  //参数：父亲结构体，要包含的成员
         {
             struct_->u.structure->hasArray = 1;  //推出该结构体有数组
         }
-        if(i==0)  //当前是第一个成员变量
-        {
-            struct_->u.structure->tail = temp;  //链表头指向它
-        }
-        else    //不是第一个成员变量
-        {
-            fieldcur->tail = temp;   //上一个指向它
-        }
+	temp->tail = struct_->u.structure->tail;            
+struct_->u.structure->tail = temp;  //链表头指向它
         fieldcur = temp;
         if(structi->kind!=BASIC)   //如果不是基本变量类型
         {
@@ -209,12 +205,12 @@ Type arrayMem(Type type_,int dms)
 {
     if(type_->kind==BASIC || type_->kind==STRUCTURE)
     {
-        printf("");  //该类型不是数组！该怎么通知上去呢？
+  //      printf("");  //该类型不是数组！该怎么通知上去呢？
         return NULL;
     }
     if(type_->u.array.dimension<dms)
     {
-        printf(""); //也可以认为是同样的错误类型
+    //    printf(""); //也可以认为是同样的错误类型
         return NULL;
     }
     Type cur = type_;
@@ -269,26 +265,26 @@ void printType(Type t)
 {
     if(t->kind==BASIC)
     {
-        printf("basic:%d",t->u.basic);
+      //  printf("basic:%d",t->u.basic);
         return;
     }
     else if(t->kind==ARRAY)
     {
         printType(t->u.array.elem);
-        printf("[ ]");
+        //printf("[ ]");
     }
     else if(t->kind==STRUCTURE)
     {
-        printf("struct %s{ ",t->u.structure->name);
+        //printf("struct %s{ ",t->u.structure->name);
         FieldList cur = t->u.structure->tail;
         while(cur!=NULL)
         {
-            printf("%s:",cur->name);
+          //  printf("%s:",cur->name);
             printType(cur->type);
             printf(" ");
             cur = cur->tail;
         }
-        printf("} ");
+        //printf("} ");
     }
 }
 
@@ -298,7 +294,7 @@ void printTypeList()
     for(i=0;i!=-1;i = typelist[i].nxt)
     {
         printType(&typelist[i]);
-        printf("\n");
+        //printf("\n");
     }
 }
 
@@ -326,7 +322,11 @@ bool isEqual(Type a,Type b)
     {
         int anum = a->u.structure->memnum;
         int bnum = b->u.structure->memnum;
-        if(anum!=bnum) return false;  //成员变量数目不等一定不等价
+	        if(strcmp(a->u.structure->name,b->u.structure->name)==0)
+        {
+            return true;
+        }        
+if(anum!=bnum) return false;  //成员变量数目不等一定不等价
         if(a->u.structure->hasArray || b->u.structure->hasArray) //含有数组则一定不等价
         {
             return false;
